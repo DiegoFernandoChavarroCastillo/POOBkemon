@@ -14,7 +14,7 @@ Este proyecto es una simulación inspirada en el juego Pokémon Esmeralda. El ju
 ---
 
 ## 📁 Estructura del proyecto
-
+'''
 POOBkemon/
 ├── src/
 │ ├── domain/ # Lógica y entidades del juego
@@ -25,7 +25,7 @@ POOBkemon/
 ├── .gitignore
 ├── pruebaPook.iml
 └── README.md
-
+'''
 
 ---
 
