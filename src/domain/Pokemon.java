@@ -1,5 +1,6 @@
 package domain;
 
+
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class Pokemon {
                 moves.get(index).use(this, target);
             }
         } else {
-            new Struggle().use(this, target);
+            MoveDatabase.getMove("STRUGGLE").use(this,target);
         }
     }
 

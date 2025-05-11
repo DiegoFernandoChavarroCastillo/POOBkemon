@@ -44,7 +44,8 @@
             moves.put("CONFUSION", new SpecialMove("CONFUSION", "PSYCHIC", 50, 100, 25, 0));
             moves.put("ICE BEAM", new SpecialMove("ICE BEAM", "ICE", 90, 100, 10, 0));
             moves.put("BLIZZARD", new SpecialMove("BLIZZARD", "ICE", 110, 70, 5, 0));
-            moves.put("STRUGGLE", new PhysicalMove("STRUGGLE", "NORMAL", 50, 100, 999, 0));
+            // forcejeo
+            moves.put("STRUGGLE", new StruggleMove());;
         }
 
 
