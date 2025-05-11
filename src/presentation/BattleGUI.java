@@ -1,24 +1,20 @@
 package presentation;
 
 import domain.*;
-import domain.Action;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.Timer;
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
-
 
 
 /**
  * The BattleGUI class represents the graphical user interface for the Pokémon battle game.
- * It handles the display of the battle scene, player interactions, and game flow.
+ * It handles ONLY the display of the battle scene and user interactions.
  */
 public class BattleGUI extends JFrame {
     private JPanel panelSuperior, panelInferior, panelPok1, panelPok2, panelImagenes;
@@ -26,14 +22,10 @@ public class BattleGUI extends JFrame {
     private JProgressBar hpBar1, hpBar2;
     private JButton btnAtacar, btnCambiar, btnItem, btnExtra;
     private JLabel pok1Label, pok2Label;
-    private Battle battle;
     private JPanel panelOpciones;
     private CardLayout cardLayout;
     private GameController controller;
 
-    /**
-     * Constructs a new BattleGUI instance and initializes the main menu.
-     */
     public BattleGUI() {
         setTitle("POOBkemon Battle - Menú Principal");
         setSize(500, 400);
@@ -68,9 +60,9 @@ public class BattleGUI extends JFrame {
         JButton pvmButton = new JButton("Jugador vs Máquina (PvM)");
         JButton mvmButton = new JButton("Máquina vs Máquina (MvM)");
 
-        pvpButton.addActionListener(e -> showPlayerSetup(1));
-        pvmButton.addActionListener(e -> showPlayerSetup(2));
-        mvmButton.addActionListener(e -> showPlayerSetup(3));
+        pvpButton.addActionListener(e -> controller.showPlayerSetup(1));
+        pvmButton.addActionListener(e -> controller.showPlayerSetup(2));
+        mvmButton.addActionListener(e -> controller.showPlayerSetup(3));
 
         Font buttonFont = new Font("Arial", Font.BOLD, 14);
         pvpButton.setFont(buttonFont);
@@ -96,132 +88,63 @@ public class BattleGUI extends JFrame {
         add(menuPanel);
     }
 
-    private void setupBattleWindow() {
+    public void setupBattleWindow() {
         getContentPane().removeAll();
         setTitle("POOBkemon Battle");
         setSize(700, 600);
         prepareElements();
-        prepareActions();
         prepareListeners();
-        updateBattleInfo();
         revalidate();
         repaint();
     }
 
-    public void setBattle(Battle battle) {
-        this.battle = battle;
-        setupBattleWindow();
-    }
+    public void updateBattleInfo(BattleState state) {
+        updatePokemonInfo(state.getPlayer1Pokemon(), labelInfo1, hpBar1, panelPok1);
+        updatePokemonInfo(state.getPlayer2Pokemon(), labelInfo2, hpBar2, panelPok2);
 
-    public void updateBattleInfo() {
-        if (battle == null) {
-            System.err.println("Error: Battle is null");
-            showDefaultBattleInfo();
-            return;
-        }
+        loadPokemonSprite(pok1Label, state.getPlayer1Pokemon().getName().toLowerCase());
+        loadPokemonSprite(pok2Label, state.getPlayer2Pokemon().getName().toLowerCase());
 
+        String turnInfo = "Turno de " + state.getCurrentPlayerName();
+        Color turnColor = state.isPlayer1Turn() ? new Color(50, 150, 250) : new Color(250, 50, 50);
 
-        Trainer player1 = battle.getPlayer1();
-        Trainer player2 = battle.getPlayer2();
-
-        if (player1 == null || player2 == null) {
-            System.err.println("Error: One or both trainers are null");
-            showDefaultBattleInfo();
-            return;
-        }
-        if (!battle.isFinished()) {
-            Trainer current = battle.getCurrentPlayer();
-            Pokemon active = current.getActivePokemon();
-
-            if (active != null && active.getHp() <= 0 && !current.isCPU()) {
-                handleFaintedPokemon(current);
-            }
-        }
-
-
-        Pokemon pok1 = player1.getActivePokemon();
-        Pokemon pok2 = player2.getActivePokemon();
-
-        if (pok1 == null || pok2 == null) {
-            System.err.println("Error: One or both active Pokémon are null");
-            showDefaultBattleInfo();
-            return;
-        }
-
-
-        updatePokemonInfo(pok1, labelInfo1, hpBar1, panelPok1);
-
-
-        updatePokemonInfo(pok2, labelInfo2, hpBar2, panelPok2);
-
-
-        loadPokemonSprite(pok1Label, pok1.getName().toLowerCase());
-        loadPokemonSprite(pok2Label, pok2.getName().toLowerCase());
-
-
-        String turnInfo;
-        Color turnColor;
-        if (battle.getCurrentPlayer() == player1) {
-            turnInfo = "Turno de " + player1.getName();
-            turnColor = new Color(50, 150, 250); // Blue for player 1
-            panelPok1.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-            panelPok2.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        } else {
-            turnInfo = "Turno de " + player2.getName();
-            turnColor = new Color(250, 50, 50); // Red for player 2/CPU
-            panelPok1.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-            panelPok2.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-        }
-
+        panelPok1.setBorder(BorderFactory.createLineBorder(state.isPlayer1Turn() ? Color.RED : Color.BLACK,
+                state.isPlayer1Turn() ? 3 : 2));
+        panelPok2.setBorder(BorderFactory.createLineBorder(state.isPlayer1Turn() ? Color.BLACK : Color.RED,
+                state.isPlayer1Turn() ? 2 : 3));
 
         String statusText = "<html><div style='text-align:center;'>" +
                 "<b><font color='" + String.format("#%02x%02x%02x",
                 turnColor.getRed(), turnColor.getGreen(), turnColor.getBlue()) + "'>" +
                 turnInfo + "</font></b><br>" +
-                player1.getName() + ": " +
-                "<b>" + pok1.getName() + "</b> (" + pok1.getHp() + "/" + pok1.getMaxHp() + " HP)<br>" +
-                player2.getName() + ": " +
-                "<b>" + pok2.getName() + "</b> (" + pok2.getHp() + "/" + pok2.getMaxHp() + " HP)";
+                state.getPlayer1Name() + ": " +
+                "<b>" + state.getPlayer1Pokemon().getName() + "</b> (" + state.getPlayer1Pokemon().getHp() + "/" +
+                state.getPlayer1Pokemon().getMaxHp() + " HP)<br>" +
+                state.getPlayer2Name() + ": " +
+                "<b>" + state.getPlayer2Pokemon().getName() + "</b> (" + state.getPlayer2Pokemon().getHp() + "/" +
+                state.getPlayer2Pokemon().getMaxHp() + " HP)";
 
-
-        if (Battle.getClimate() != null) {
-            statusText += "<br>Clima: <i>" + Battle.getClimate() + "</i>";
+        if (state.getClimate() != null) {
+            statusText += "<br>Clima: <i>" + state.getClimate() + "</i>";
         }
 
         statusText += "</div></html>";
-
         infoLabel.setText(statusText);
-        infoLabel.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        // Update button states based on turn
-        boolean isHumanTurn = !battle.getCurrentPlayer().isCPU();
+        boolean isHumanTurn = state.isHumanTurn();
         btnAtacar.setEnabled(isHumanTurn);
         btnCambiar.setEnabled(isHumanTurn);
         btnItem.setEnabled(isHumanTurn);
         btnExtra.setEnabled(isHumanTurn);
-
-
-        if (!battle.isFinished()) {
-            Trainer current = battle.getCurrentPlayer();
-            Pokemon active = current.getActivePokemon();
-
-            // If human player's Pokémon fainted and they have others
-            if (active != null && active.getHp() <= 0 && !current.isCPU()) {
-                if (!current.getTeam().isAllFainted()) {
-                    showSwitchPokemonDialog(current);
-                }
-            }
-        }
     }
 
     private void updatePokemonInfo(Pokemon pokemon, JLabel infoLabel, JProgressBar hpBar, JPanel panel) {
         infoLabel.setText(pokemon.getName() + " Lv." + pokemon.getLevel());
         hpBar.setMaximum(pokemon.getMaxHp());
-        hpBar.setValue(Math.max(0, pokemon.getHp())); // Ensure HP doesn't show negative
+        hpBar.setValue(Math.max(0, pokemon.getHp()));
         hpBar.setString(pokemon.getHp() + "/" + pokemon.getMaxHp());
         hpBar.setStringPainted(true);
 
-        // Update HP bar color based on percentage
         double hpPercentage = (double) pokemon.getHp() / pokemon.getMaxHp();
         if (hpPercentage > 0.5) {
             hpBar.setForeground(Color.GREEN);
@@ -231,46 +154,14 @@ public class BattleGUI extends JFrame {
             hpBar.setForeground(Color.RED);
         }
 
-
         if (pokemon.getHp() <= 0) {
-            panel.setBackground(new Color(255, 200, 200)); // Light red for fainted
+            panel.setBackground(new Color(255, 200, 200));
             hpBar.setForeground(Color.GRAY);
             infoLabel.setForeground(Color.GRAY);
         } else {
-            panel.setBackground(new Color(255, 255, 153)); // Light yellow for normal
+            panel.setBackground(new Color(255, 255, 153));
             infoLabel.setForeground(Color.BLACK);
         }
-    }
-
-    private void showDefaultBattleInfo() {
-
-        labelInfo1.setText("No Pokémon");
-        hpBar1.setMaximum(100);
-        hpBar1.setValue(0);
-        hpBar1.setString("0/0");
-        hpBar1.setForeground(Color.RED);
-
-        labelInfo2.setText("No Pokémon");
-        hpBar2.setMaximum(100);
-        hpBar2.setValue(0);
-        hpBar2.setString("0/0");
-        hpBar2.setForeground(Color.RED);
-
-        infoLabel.setText("<html><div style='text-align:center;'>" +
-                "<b>Error loading battle information</b><br>" +
-                "Please check the console for details</div></html>");
-
-
-        pok1Label.setIcon(null);
-        pok1Label.setText("No Pokémon");
-        pok2Label.setIcon(null);
-        pok2Label.setText("No Pokémon");
-
-
-        btnAtacar.setEnabled(false);
-        btnCambiar.setEnabled(false);
-        btnItem.setEnabled(false);
-        btnExtra.setEnabled(false);
     }
 
     private void loadPokemonSprite(JLabel label, String pokemonName) {
@@ -283,37 +174,17 @@ public class BattleGUI extends JFrame {
                 File file = new File(basePath + pokemonName + ext);
                 if (file.exists()) {
                     BufferedImage originalImage = ImageIO.read(file);
-                    BufferedImage scaledImage = new BufferedImage(
-                            spriteWidth, spriteHeight, BufferedImage.TYPE_INT_ARGB);
-
-                    Graphics2D g2 = scaledImage.createGraphics();
-                    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                            RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                    g2.drawImage(originalImage, 0, 0, spriteWidth, spriteHeight, null);
-                    g2.dispose();
-
+                    Image scaledImage = originalImage.getScaledInstance(spriteWidth, spriteHeight, Image.SCALE_SMOOTH);
                     label.setIcon(new ImageIcon(scaledImage));
                     return;
                 }
             }
-
             label.setIcon(null);
             label.setText(pokemonName);
         } catch (IOException e) {
             System.err.println("Error al cargar imagen: " + e.getMessage());
             label.setIcon(null);
             label.setText(pokemonName);
-        }
-    }
-
-    private void updateHpBarColor(JProgressBar bar, int currentHp, int maxHp) {
-        double percentage = (double) currentHp / maxHp;
-        if (percentage > 0.5) {
-            bar.setForeground(Color.GREEN);
-        } else if (percentage > 0.2) {
-            bar.setForeground(Color.YELLOW);
-        } else {
-            bar.setForeground(Color.RED);
         }
     }
 
@@ -404,124 +275,31 @@ public class BattleGUI extends JFrame {
         add(panelInferior, BorderLayout.SOUTH);
     }
 
-    private void prepareActions() {
-
-    }
-
     private void prepareListeners() {
-        btnAtacar.addActionListener(e -> showAttackOptions());
+        btnAtacar.addActionListener(e -> controller.showAttackOptions());
 
-        btnCambiar.addActionListener(e -> {
-            Trainer current = battle.getCurrentPlayer();
-            String[] pokemons = new String[current.getTeam().getPokemons().size()];
+        btnCambiar.addActionListener(e -> controller.showSwitchPokemonDialog());
 
-            for (int i = 0; i < pokemons.length; i++) {
-                Pokemon p = current.getTeam().getPokemons().get(i);
-                String status = (p.getHp() <= 0) ? " - Debilitado" : "";
-                pokemons[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")" + status;
-            }
+        btnItem.addActionListener(e -> controller.showItemSelectionDialog());
 
-            String selected = (String) JOptionPane.showInputDialog(
-                    this,
-                    "Selecciona un Pokémon:",
-                    "Cambiar Pokémon",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    pokemons,
-                    pokemons[0]);
-
-            if (selected != null) {
-                int pokemonIndex = Arrays.asList(pokemons).indexOf(selected);
-                controller.getCurrentBattle().performAction(Action.createSwitchPokemon(pokemonIndex));
-                updateBattleInfo();
-                endPlayerTurn();
-            }
-        });
-
-        btnItem.addActionListener(e -> {
-            Trainer current = battle.getCurrentPlayer();
-
-            if (current.getItems().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No tienes ítems disponibles.");
-                return;
-            }
-
-            String[] itemNames = current.getItems().stream()
-                    .map(Item::getName)
-                    .toArray(String[]::new);
-
-            String selectedItemName = (String) JOptionPane.showInputDialog(
-                    this,
-                    "Selecciona un ítem:",
-                    "Usar Ítem",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    itemNames,
-                    itemNames[0]);
-
-            if (selectedItemName != null) {
-                int itemIndex = Arrays.asList(itemNames).indexOf(selectedItemName);
-
-                String[] targets = new String[current.getTeam().getPokemons().size()];
-                for (int i = 0; i < targets.length; i++) {
-                    Pokemon p = current.getTeam().getPokemons().get(i);
-                    targets[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")";
-                }
-
-                String selectedTarget = (String) JOptionPane.showInputDialog(
-                        this,
-                        "Selecciona un Pokémon objetivo:",
-                        "Objetivo del Ítem",
-                        JOptionPane.PLAIN_MESSAGE,
-                        null,
-                        targets,
-                        targets[0]);
-
-                if (selectedTarget != null) {
-                    int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
-                    battle.performAction(Action.createUseItem(itemIndex, targetIndex));
-                    updateBattleInfo();
-                    endPlayerTurn();
-                }
-            }
-        });
-
-        btnExtra.addActionListener(e -> {
-            int option = JOptionPane.showConfirmDialog(
-                    this,
-                    "¿Quieres rendirte?",
-                    "Rendición",
-                    JOptionPane.YES_NO_OPTION);
-
-            if (option == JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(this, "Te has rendido. ¡Perdiste la batalla!");
-                System.exit(0);
-            }
-        });
+        btnExtra.addActionListener(e -> controller.handleSurrender());
     }
 
-    private void showAttackOptions() {
-        Pokemon active = battle.getCurrentPlayer().getActivePokemon();
-        List<Move> moves = active.getMoves();
-
+    public void showAttackOptions(List<Move> moves) {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
         attackPanel.removeAll();
+        attackPanel.setLayout(new GridLayout(0, 1, 5, 5)); // Mejor distribución de los botones
 
-        for (Move move : moves) {
+        Map<JButton, Integer> buttonIndexMap = new HashMap<>();
+
+        for (int i = 0; i < moves.size(); i++) {
+            Move move = moves.get(i);
             JButton moveButton = new JButton(move.name() + " (PP: " + move.pp() + "/" + move.maxPP() + ")");
             moveButton.setBackground(Color.ORANGE);
-            moveButton.addActionListener(e -> {
-                int moveIndex = moves.indexOf(move);
-                controller.getCurrentBattle().performAction(Action.createAttack(moveIndex));
-                updateBattleInfo();
+            moveButton.setFont(new Font("Arial", Font.BOLD, 12));
 
-                if (!battle.isFinished()) {
-                    cardLayout.show(panelOpciones, "main");
-                    endPlayerTurn();
-                } else {
-                    checkBattleEnd();
-                }
-            });
+            final int moveIndex = i;
+            moveButton.addActionListener(e -> controller.executeAttack(moveIndex));
 
             if (move.pp() <= 0) {
                 moveButton.setEnabled(false);
@@ -529,6 +307,7 @@ public class BattleGUI extends JFrame {
             }
 
             attackPanel.add(moveButton);
+            buttonIndexMap.put(moveButton, i);
         }
 
         JButton cancelButton = new JButton("Cancelar");
@@ -541,176 +320,27 @@ public class BattleGUI extends JFrame {
         attackPanel.repaint();
     }
 
-    private void checkBattleEnd() {
-        if (battle.isFinished()) {
-            Trainer winner = battle.getWinner();
-            String message = winner != null ?
-                    "¡" + winner.getName() + " ha ganado la batalla!" :
-                    "¡La batalla ha terminado en empate!";
-
-            JOptionPane.showMessageDialog(this, message);
-            System.exit(0);
-        }
+    public void setController(GameController controller) {
+        this.controller = controller;
     }
 
-    private void endPlayerTurn() {
-        if (battle.isFinished()) {
-            checkBattleEnd();
-            return;
-        }
-
-
-        battle.changeTurn();
-        updateBattleInfo();
-
-
-        if (!battle.isFinished() && battle.getCurrentPlayer().isCPU()) {
-            executeCpuTurn();
-        }
+    public void showBattleEnd(String message) {
+        JOptionPane.showMessageDialog(this, message);
+        System.exit(0);
+    }
+    public boolean isAttackPanelVisible() {
+        return ((JPanel)panelOpciones.getComponent(1)).getComponentCount() > 0;
     }
 
-    private void executeAutoBattleTurn() {
-        Timer timer = new Timer(1500, e -> {
-            if (!battle.isFinished()) {
-                controller.getCurrentBattle().executeCpuTurn();
-                updateBattleInfo();
-
-                if (battle.getCurrentPlayer().isCPU()) {
-                    executeAutoBattleTurn();
-                }
-            } else {
-                checkBattleEnd();
-            }
-        });
-        timer.setRepeats(false);
-        timer.start();
+    public void showMainOptions() {
+        cardLayout.show(panelOpciones, "main");
     }
 
-    private void showPlayerSetup(int gameMode) {
-        JPanel setupPanel = new JPanel(new GridLayout(0, 1, 10, 10));
-        setupPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JTextField player1Field = new JTextField(20);
-        JTextField player2Field = new JTextField(20);
-
-        if (gameMode != 3) {
-            setupPanel.add(new JLabel("Nombre del Jugador 1:"));
-            setupPanel.add(player1Field);
-        }
-
-        if (gameMode == 1) {
-            setupPanel.add(new JLabel("Nombre del Jugador 2:"));
-            setupPanel.add(player2Field);
-        }
-
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                setupPanel,
-                "Configuración de jugadores",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION) {
-            String player1Name = gameMode == 3 ? "CPU Ash" :
-                    (player1Field.getText().trim().isEmpty() ? "Jugador 1" : player1Field.getText());
-            String player2Name = gameMode == 3 ? "CPU Gary" :
-                    (player2Field.getText().trim().isEmpty() ? "Jugador 2" : player2Field.getText());
-
-            this.controller = new GameController();
-            this.controller.setGUI(this);
-            this.controller.startGame(gameMode, player1Name, player2Name);
-        }
-    }
-
-    private void executeCpuTurn() {
-        Timer timer = new Timer(1000, e -> {
-            controller.getCurrentBattle().executeCpuTurn();
-            updateBattleInfo();
-
-            if (!battle.isFinished()) {
-
-                battle.changeTurn();
-                updateBattleInfo();
-            } else {
-                checkBattleEnd();
-            }
-        });
-        timer.setRepeats(false);
-        timer.start();
-    }
-
-    private void showSwitchPokemonDialog(Trainer trainer) {
-        String[] options = new String[trainer.getTeam().getPokemons().size() + 1];
-
-
-        for (int i = 0; i < trainer.getTeam().getPokemons().size(); i++) {
-            Pokemon p = trainer.getTeam().getPokemons().get(i);
-            String status = (p.getHp() <= 0) ? " - Debilitado" : "";
-            options[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")" + status;
-        }
-
-
-        boolean hasRevive = trainer.getItems().stream()
-                .anyMatch(item -> item instanceof Revive);
-
-        if (hasRevive) {
-            options[options.length - 1] = "Usar Revive";
-        }
-
-        String selected = (String) JOptionPane.showInputDialog(
-                this,
-                "¡Tu Pokémon se ha debilitado! Elige acción:",
-                "Cambiar Pokémon/Usar Revive",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                options,
-                options[0]);
-
-        if (selected != null) {
-            if (selected.equals("Usar Revive")) {
-                Optional<Item> revive = trainer.getItems().stream()
-                        .filter(item -> item instanceof Revive)
-                        .findFirst();
-
-                if (revive.isPresent()) {
-                    revive.get().use(trainer.getActivePokemon());
-                    trainer.getItems().remove(revive.get());
-                    updateBattleInfo();
-                }
-            } else {
-                int pokemonIndex = Arrays.asList(options).indexOf(selected);
-                battle.performAction(Action.createSwitchPokemon(pokemonIndex));
-                updateBattleInfo();
-            }
-        }
-    }
-    private void handleFaintedPokemon(Trainer trainer) {
-        if (trainer.getTeam().isAllFainted()) {
-            Optional<Item> revive = trainer.getItems().stream()
-                    .filter(item -> item instanceof Revive)
-                    .findFirst();
-
-            if (revive.isPresent()) {
-                revive.get().use(trainer.getActivePokemon());
-                trainer.getItems().remove(revive.get());
-                JOptionPane.showMessageDialog(this,
-                        "¡Se usó un Revive automáticamente en " +
-                                trainer.getActivePokemon().getName() + "!");
-                updateBattleInfo();
-            } else {
-                checkBattleEnd();
-            }
-        } else {
-            showSwitchPokemonDialog(trainer);
-        }
-    }
-
-    /**
-     * The main method to launch the application.
-     *
-     * @param args command line arguments (not used)
-     */
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(BattleGUI::new);
+        SwingUtilities.invokeLater(() -> {
+            BattleGUI gui = new BattleGUI();
+            GameController controller = new GameController(gui);
+            gui.setController(controller);
+        });
     }
 }

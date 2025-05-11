@@ -6,32 +6,24 @@ import presentation.MoveSelectionGUI;
 import presentation.PokemonSelectionGUI;
 
 import javax.swing.*;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import javax.swing.Timer;
+import java.awt.*;
 import java.util.*;
 import java.util.List;
-
-import static presentation.ItemSelectionGUI.showItemSelection;
 
 public class GameController {
     private Battle currentBattle;
     private BattleGUI gui;
-    private int gameMode;
 
-    public GameController() {
-
+    public GameController(BattleGUI gui) {
+        this.gui = gui;
     }
 
     public void startGame(int gameMode, String player1Name, String player2Name) {
-        this.gameMode = gameMode;
-
-
         Trainer player1 = gameMode == 3 ? new CPUTrainer("CPU Ash", "Rojo") : new Trainer(player1Name, "Rojo");
         Trainer player2 = gameMode == 1 ? new Trainer(player2Name, "Azul") : new CPUTrainer("CPU Gary", "Azul");
 
-
         showPokemonSelection(player1, () -> {
-
             showItemSelection(player1, () -> {
                 if (gameMode == 1) {
                     showPokemonSelection(player2, () -> {
@@ -46,31 +38,234 @@ public class GameController {
         });
     }
 
-    private void showItemSelection(Trainer trainer, Runnable onComplete) {
-        SwingUtilities.invokeLater(() -> {
-            ItemSelectionGUI.showItemSelection(gui, trainer);
-            onComplete.run();
+    private void startBattle(Trainer player1, Trainer player2) {
+        if (!player1.getTeam().getPokemons().isEmpty()) {
+            player1.setActivePokemon(0);
+        }
+        if (!player2.getTeam().getPokemons().isEmpty()) {
+            player2.setActivePokemon(0);
+        }
+
+        this.currentBattle = new Battle(player1, player2);
+        gui.setupBattleWindow();
+        updateUI();
+
+        if (player1.isCPU() && player2.isCPU()) {
+            startAutoBattle();
+        }
+    }
+
+    private void updateUI() {
+        gui.updateBattleInfo(currentBattle.getBattleState());
+
+        // Si el panel de ataques está visible, actualizarlo
+        if (gui.isAttackPanelVisible()) {
+            showAttackOptions();
+        }
+    }
+
+
+    public void showPlayerSetup(int gameMode) {
+        JPanel setupPanel = new JPanel(new GridLayout(0, 1, 10, 10));
+        setupPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JTextField player1Field = new JTextField(20);
+        JTextField player2Field = new JTextField(20);
+
+        if (gameMode != 3) {
+            setupPanel.add(new JLabel("Nombre del Jugador 1:"));
+            setupPanel.add(player1Field);
+        }
+
+        if (gameMode == 1) {
+            setupPanel.add(new JLabel("Nombre del Jugador 2:"));
+            setupPanel.add(player2Field);
+        }
+
+        int result = JOptionPane.showConfirmDialog(
+                gui,
+                setupPanel,
+                "Configuración de jugadores",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String player1Name = gameMode == 3 ? "CPU Ash" :
+                    (player1Field.getText().trim().isEmpty() ? "Jugador 1" : player1Field.getText());
+            String player2Name = gameMode == 3 ? "CPU Gary" :
+                    (player2Field.getText().trim().isEmpty() ? "Jugador 2" : player2Field.getText());
+
+            startGame(gameMode, player1Name, player2Name);
+        }
+    }
+
+    public void showAttackOptions() {
+        Trainer current = currentBattle.getCurrentPlayer();
+        List<Move> moves = current.getActivePokemon().getMoves();
+        gui.showAttackOptions(moves);
+    }
+
+    public void executeAttack(int moveIndex) {
+        currentBattle.performAction(Action.createAttack(moveIndex));
+        updateUI();
+
+        if (!currentBattle.isFinished()) {
+            endPlayerTurn();
+        } else {
+            checkBattleEnd();
+        }
+    }
+
+    public void showSwitchPokemonDialog() {
+        Trainer current = currentBattle.getCurrentPlayer();
+        String[] pokemons = new String[current.getTeam().getPokemons().size()];
+
+        for (int i = 0; i < pokemons.length; i++) {
+            Pokemon p = current.getTeam().getPokemons().get(i);
+            String status = (p.getHp() <= 0) ? " - Debilitado" : "";
+            pokemons[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")" + status;
+        }
+
+        String selected = (String) JOptionPane.showInputDialog(
+                gui,
+                "Selecciona un Pokémon:",
+                "Cambiar Pokémon",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                pokemons,
+                pokemons[0]);
+
+        if (selected != null) {
+            int pokemonIndex = Arrays.asList(pokemons).indexOf(selected);
+            currentBattle.performAction(Action.createSwitchPokemon(pokemonIndex));
+            updateUI();
+            endPlayerTurn();
+        }
+    }
+
+    public void showItemSelectionDialog() {
+        Trainer current = currentBattle.getCurrentPlayer();
+
+        if (current.getItems().isEmpty()) {
+            JOptionPane.showMessageDialog(gui, "No tienes ítems disponibles.");
+            return;
+        }
+
+        String[] itemNames = current.getItems().stream()
+                .map(Item::getName)
+                .toArray(String[]::new);
+
+        String selectedItemName = (String) JOptionPane.showInputDialog(
+                gui,
+                "Selecciona un ítem:",
+                "Usar Ítem",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                itemNames,
+                itemNames[0]);
+
+        if (selectedItemName != null) {
+            int itemIndex = Arrays.asList(itemNames).indexOf(selectedItemName);
+
+            String[] targets = new String[current.getTeam().getPokemons().size()];
+            for (int i = 0; i < targets.length; i++) {
+                Pokemon p = current.getTeam().getPokemons().get(i);
+                targets[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")";
+            }
+
+            String selectedTarget = (String) JOptionPane.showInputDialog(
+                    gui,
+                    "Selecciona un Pokémon objetivo:",
+                    "Objetivo del Ítem",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    targets,
+                    targets[0]);
+
+            if (selectedTarget != null) {
+                int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
+                currentBattle.performAction(Action.createUseItem(itemIndex, targetIndex));
+                updateUI();
+                endPlayerTurn();
+            }
+        }
+    }
+
+    public void handleSurrender() {
+        int option = JOptionPane.showConfirmDialog(
+                gui,
+                "¿Quieres rendirte?",
+                "Rendición",
+                JOptionPane.YES_NO_OPTION);
+
+        if (option == JOptionPane.YES_OPTION) {
+            gui.showBattleEnd("Te has rendido. ¡Perdiste la batalla!");
+        }
+    }
+
+    private void endPlayerTurn() {
+        if (currentBattle.isFinished()) {
+            checkBattleEnd();
+            return;
+        }
+
+        currentBattle.changeTurn();
+        updateUI();
+
+
+        gui.showMainOptions();
+
+        if (!currentBattle.isFinished() && currentBattle.getCurrentPlayer().isCPU()) {
+            executeCpuTurn();
+        }
+    }
+
+    private void executeCpuTurn() {
+        Timer timer = new Timer(1000, e -> {
+            currentBattle.executeCpuTurn();
+            updateUI();
+
+            if (!currentBattle.isFinished()) {
+                currentBattle.changeTurn();
+                updateUI();
+            } else {
+                checkBattleEnd();
+            }
         });
+        timer.setRepeats(false);
+        timer.start();
     }
 
-    private void selectItemsForCPU(Trainer cpu, Runnable onComplete) {
+    private void startAutoBattle() {
+        Timer timer = new Timer(1500, e -> {
+            if (!currentBattle.isFinished()) {
+                currentBattle.executeCpuTurn();
+                updateUI();
 
-        List<Item> items = Arrays.asList(
-                new Potion(),
-                new SuperPotion(),
-                new HyperPotion(),
-                new Revive()
-        );
-        Collections.shuffle(items);
-
-        cpu.getItems().clear();
-        cpu.getItems().addAll(items.subList(0, Math.min(3, items.size())));
-        onComplete.run();
+                if (currentBattle.getCurrentPlayer().isCPU()) {
+                    currentBattle.changeTurn();
+                    updateUI();
+                }
+            } else {
+                checkBattleEnd();
+            }
+        });
+        timer.start();
     }
+
+    private void checkBattleEnd() {
+        if (currentBattle.isFinished()) {
+            Trainer winner = currentBattle.getWinner();
+            String message = winner != null ?
+                    "¡" + winner.getName() + " ha ganado la batalla!" :
+                    "¡La batalla ha terminado en empate!";
+            gui.showBattleEnd(message);
+        }
+    }
+
 
     private void showPokemonSelection(Trainer trainer, Runnable onComplete) {
         PokemonSelectionGUI selectionGUI = new PokemonSelectionGUI(gui, trainer, 6, selectedPokemons -> {
-
             selectMovesForPokemons(selectedPokemons, onComplete);
         });
         selectionGUI.setVisible(true);
@@ -81,12 +276,11 @@ public class GameController {
             onComplete.run();
             return;
         }
-
         Pokemon current = pokemons.get(0);
         MoveSelectionGUI moveGUI = new MoveSelectionGUI(gui, current);
-        moveGUI.addWindowListener(new WindowAdapter() {
+        moveGUI.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
-            public void windowClosed(WindowEvent e) {
+            public void windowClosed(java.awt.event.WindowEvent e) {
                 selectMovesForPokemons(pokemons.subList(1, pokemons.size()), onComplete);
             }
         });
@@ -94,18 +288,15 @@ public class GameController {
     }
 
     private void selectPokemonForCPU(Trainer cpu, Runnable onComplete) {
-
         List<String> available = new ArrayList<>(PokemonDataBase.getAvailablePokemonNames());
         Collections.shuffle(available);
 
         int count = Math.min(6, available.size());
         for (int i = 0; i < count; i++) {
             Pokemon pokemon = PokemonDataBase.getPokemon(available.get(i));
-
             selectRandomMoves(pokemon);
             cpu.addPokemonToTeam(pokemon);
         }
-
         onComplete.run();
     }
 
@@ -115,73 +306,27 @@ public class GameController {
         pokemon.setMoves(allMoves.subList(0, Math.min(4, allMoves.size())));
     }
 
-    private void startBattle(Trainer player1, Trainer player2) {
-
-        if (!player1.getTeam().getPokemons().isEmpty()) {
-            player1.setActivePokemon(0);
-        } else {
-            System.err.println("Error: Player 1 has no Pokémon in team!");
-        }
-
-        if (!player2.getTeam().getPokemons().isEmpty()) {
-            player2.setActivePokemon(0); // Establece el primer Pokémon como activo
-        } else {
-            System.err.println("Error: Player 2 has no Pokémon in team!");
-        }
-
-        this.currentBattle = new Battle(player1, player2);
-        gui.setBattle(currentBattle);
-        gui.updateBattleInfo();
-
-        if (gameMode == 3) {
-            startAutoBattle();
-        }
+    private void showItemSelection(Trainer trainer, Runnable onComplete) {
+        SwingUtilities.invokeLater(() -> {
+            ItemSelectionGUI.showItemSelection(gui, trainer);
+            onComplete.run();
+        });
     }
 
-    private void startAutoBattle() {
-        new Thread(() -> {
-            while (!currentBattle.isFinished()) {
-                try {
-                    Thread.sleep(1500);
-                    SwingUtilities.invokeLater(() -> {
-                        currentBattle.executeCpuTurn();
-                        gui.updateBattleInfo();
-                    });
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }).start();
-    }
-
-    public void setGUI(BattleGUI gui) {
-        this.gui = gui;
+    private void selectItemsForCPU(Trainer cpu, Runnable onComplete) {
+        List<Item> items = Arrays.asList(
+                new Potion(),
+                new SuperPotion(),
+                new HyperPotion(),
+                new Revive()
+        );
+        Collections.shuffle(items);
+        cpu.getItems().clear();
+        cpu.getItems().addAll(items.subList(0, Math.min(3, items.size())));
+        onComplete.run();
     }
 
     public Battle getCurrentBattle() {
         return currentBattle;
-    }
-
-    private static Move getValidMove(String moveName) {
-        Move move = MoveDatabase.getMove(moveName);
-        if (move == null) {
-            System.err.println("¡Advertencia! Movimiento " + moveName + " no encontrado. Usando Struggle como respaldo.");
-            return new Struggle();
-        }
-        return move;
-    }
-
-
-
-
-
-    public abstract class WindowAdapter implements WindowListener {
-        public void windowOpened(WindowEvent e) {}
-        public void windowClosing(WindowEvent e) {}
-        public void windowClosed(WindowEvent e) {}
-        public void windowIconified(WindowEvent e) {}
-        public void windowDeiconified(WindowEvent e) {}
-        public void windowActivated(WindowEvent e) {}
-        public void windowDeactivated(WindowEvent e) {}
     }
 }
