@@ -49,7 +49,7 @@ public class Battle {
     public void executeCpuTurn() {
         if (!battleEnded && getCurrentPlayer().isCPU()) {
             CPUTrainer cpu = (CPUTrainer) getCurrentPlayer();
-            Action action = cpu.decideAction();
+            Action action = cpu.decideAction(this); // Pasamos la instancia de Battle
             executeAction(cpu, action);
             postAction();
         }

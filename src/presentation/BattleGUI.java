@@ -39,6 +39,7 @@ public class BattleGUI extends JFrame {
         JPanel menuPanel = new JPanel(new BorderLayout());
         menuPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // Panel del logo (sin cambios)
         JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         try {
             BufferedImage logoImage = ImageIO.read(new File("src/sprites/Logo.png"));
@@ -53,39 +54,91 @@ public class BattleGUI extends JFrame {
             logoPanel.add(titleLabel);
         }
 
+        // Panel de botones
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 10, 10));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
-        JButton pvpButton = new JButton("Jugador vs Jugador (PvP)");
-        JButton pvmButton = new JButton("Jugador vs Máquina (PvM)");
-        JButton mvmButton = new JButton("Máquina vs Máquina (MvM)");
+        // Botón PvP
+        JButton pvpButton = createModeButton("Jugador vs Jugador (PvP)",
+                new Color(100, 150, 255),
+                "Modo PvP - Jugador vs Jugador\n\n" +
+                        "Ambos jugadores controlan sus Pokémon manualmente.\n" +
+                        "Cada jugador seleccionará:\n" +
+                        "- 6 Pokémon\n" +
+                        "- Movimientos para cada Pokémon\n" +
+                        "- Ítems para usar en batalla");
 
+        // Botón PvM
+        JButton pvmButton = createModeButton("Jugador vs Máquina (PvM)",
+                new Color(100, 200, 100),
+                "Modo PvM - Jugador vs Máquina\n\n" +
+                        "Tú controlas tu equipo y configuras el equipo de la CPU.\n" +
+                        "Seleccionarás:\n" +
+                        "- Tus 6 Pokémon y sus movimientos\n" +
+                        "- Tus ítems\n" +
+                        "- Estrategia de la CPU (Defensiva, Ofensiva, etc.)\n" +
+                        "- Pokémon, movimientos e ítems de la CPU");
+
+        // Botón MvM
+        JButton mvmButton = createModeButton("Máquina vs Máquina (MvM)",
+                new Color(255, 150, 100),
+                "Modo MvM - Máquina vs Máquina\n\n" +
+                        "Configuras ambos equipos CPU y observas la batalla.\n" +
+                        "Para cada CPU configurarás:\n" +
+                        "- Estrategia (Defensiva, Ofensiva, etc.)\n" +
+                        "- 6 Pokémon y sus movimientos\n" +
+                        "- Ítems disponibles");
+
+        // Configuración de acciones para los botones
         pvpButton.addActionListener(e -> controller.showPlayerSetup(1));
         pvmButton.addActionListener(e -> controller.showPlayerSetup(2));
         mvmButton.addActionListener(e -> controller.showPlayerSetup(3));
-
-        Font buttonFont = new Font("Arial", Font.BOLD, 14);
-        pvpButton.setFont(buttonFont);
-        pvmButton.setFont(buttonFont);
-        mvmButton.setFont(buttonFont);
-
-        pvpButton.setBackground(new Color(100, 150, 255));
-        pvmButton.setBackground(new Color(100, 200, 100));
-        mvmButton.setBackground(new Color(255, 150, 100));
-
-        pvpButton.setForeground(Color.WHITE);
-        pvmButton.setForeground(Color.WHITE);
-        mvmButton.setForeground(Color.WHITE);
 
         buttonPanel.add(pvpButton);
         buttonPanel.add(pvmButton);
         buttonPanel.add(mvmButton);
 
+        // Panel de información adicional
+        JPanel infoPanel = new JPanel();
+        infoPanel.setBackground(new Color(240, 240, 240));
+        infoPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.GRAY),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+
+        JLabel infoLabel = new JLabel("<html><div style='text-align:center;'>" +
+                "<b>¡Nueva característica!</b><br>" +
+                "Ahora puedes configurar completamente los equipos CPU<br>" +
+                "en los modos Jugador vs Máquina y Máquina vs Máquina</div></html>");
+        infoPanel.add(infoLabel);
+
+        // Ensamblar el panel principal
         menuPanel.add(logoPanel, BorderLayout.NORTH);
         menuPanel.add(buttonPanel, BorderLayout.CENTER);
+        menuPanel.add(infoPanel, BorderLayout.SOUTH);
         menuPanel.setBackground(new Color(194, 255, 82));
 
         add(menuPanel);
+    }
+
+    // Método auxiliar para crear botones de modo con tooltips
+    private JButton createModeButton(String text, Color bgColor, String description) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setToolTipText(description); // Tooltip con descripción detallada
+
+        // Agregar efecto hover
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor);
+            }
+        });
+
+        return button;
     }
 
     public void setupBattleWindow() {
@@ -322,6 +375,13 @@ public class BattleGUI extends JFrame {
 
     public void setController(GameController controller) {
         this.controller = controller;
+    }
+    // Nuevo método para mostrar descripción del modo
+    private void showModeDescription(String message) {
+        JOptionPane.showMessageDialog(this,
+                message,
+                "Descripción del Modo",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void showBattleEnd(String message) {

@@ -25,17 +25,65 @@ public class GameController {
 
         showPokemonSelection(player1, () -> {
             showItemSelection(player1, () -> {
-                if (gameMode == 1) {
+                // Modo PvP (1) o MvM (3) con selección completa
+                if (gameMode == 1 || gameMode == 3) {
                     showPokemonSelection(player2, () -> {
-                        showItemSelection(player2, () -> startBattle(player1, player2));
+                        showItemSelection(player2, () -> {
+                            if (gameMode == 3) { // Solo en MvM seleccionamos estrategias
+                                selectCPUStrategy((CPUTrainer) player1, () -> {
+                                    selectCPUStrategy((CPUTrainer) player2, () -> {
+                                        startBattle(player1, player2);
+                                    });
+                                });
+                            } else {
+                                startBattle(player1, player2);
+                            }
+                        });
                     });
-                } else {
-                    selectPokemonForCPU(player2, () -> {
-                        selectItemsForCPU(player2, () -> startBattle(player1, player2));
+                }
+                // Modo PvM (2) con selección de CPU
+                else {
+                    selectCPUStrategy((CPUTrainer) player2, () -> {
+                        showPokemonSelection(player2, () -> {
+                            showItemSelection(player2, () -> {
+                                startBattle(player1, player2);
+                            });
+                        });
                     });
                 }
             });
         });
+    }
+
+    // Nuevo método para seleccionar estrategia de CPU
+    private void selectCPUStrategy(CPUTrainer cpu, Runnable onComplete) {
+        String[] options = {"Defensivo", "Ofensivo", "Cambiador", "Experto"};
+        String selected = (String) JOptionPane.showInputDialog(
+                gui,
+                "Selecciona la estrategia para " + cpu.getName() + ":",
+                "Estrategia de CPU",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (selected != null) {
+            switch (selected) {
+                case "Defensivo":
+                    cpu.setStrategy(new DefensiveStrategy());
+                    break;
+                case "Ofensivo":
+                    cpu.setStrategy(new AttackingStrategy());
+                    break;
+                case "Cambiador":
+                    cpu.setStrategy(new ChangingStrategy());
+                    break;
+                case "Experto":
+                    cpu.setStrategy(new ExpertStrategy());
+                    break;
+            }
+        }
+        onComplete.run();
     }
 
     private void startBattle(Trainer player1, Trainer player2) {
@@ -222,14 +270,23 @@ public class GameController {
 
     private void executeCpuTurn() {
         Timer timer = new Timer(1000, e -> {
-            currentBattle.executeCpuTurn();
-            updateUI();
-
             if (!currentBattle.isFinished()) {
-                currentBattle.changeTurn();
+                currentBattle.executeCpuTurn();
                 updateUI();
-            } else {
-                checkBattleEnd();
+
+                if (!currentBattle.isFinished()) {
+                    currentBattle.changeTurn();
+                    updateUI();
+
+                    if (currentBattle.getCurrentPlayer().isCPU()) {
+                        // Ejecutar siguiente turno de CPU con un pequeño delay
+                        new Timer(1000, ev -> executeCpuTurn()).start();
+                    } else {
+                        gui.showMainOptions();
+                    }
+                } else {
+                    checkBattleEnd();
+                }
             }
         });
         timer.setRepeats(false);
