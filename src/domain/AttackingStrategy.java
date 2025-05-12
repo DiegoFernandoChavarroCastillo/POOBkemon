@@ -4,15 +4,28 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Estrategia ofensiva: prioriza movimientos que causan daño o reducen defensa del oponente
+ * Implementation of BattleStrategy that prioritizes offensive moves,
+ * selecting attacks that deal maximum damage or reduce the opponent's defense.
+ * This strategy considers using items and switching Pokémon when health is critical,
+ * but primarily focuses on maximizing damage dealt to the opponent.
+ *
  */
 public class AttackingStrategy implements BattleStrategy {
     private Random random = new Random();
 
+    /**
+     * Decides the action to perform during a battle turn, prioritizing
+     * offensive moves. Considers using items if beneficial, switching Pokémon
+     * when health is critical, or selecting the highest power move available.
+     *
+     * @param trainer CPU Trainer using this strategy
+     * @param battle Current battle context
+     * @return Action with the decision made (use item, switch Pokémon, or attack)
+     * @see Action#createSwitchPokemon(int)
+     * @see Action#createAttack(int)
+     */
     @Override
     public Action decideAction(CPUTrainer trainer, Battle battle) {
-
-
         Pokemon current = trainer.getActivePokemon();
         Pokemon opponent = battle.getOpponent().getActivePokemon();
 
@@ -44,6 +57,14 @@ public class AttackingStrategy implements BattleStrategy {
         return getRandomUsableMove(moves);
     }
 
+    /**
+     * Randomly selects a usable move (with remaining PP) from the list.
+     * Makes up to 10 attempts before returning the Struggle move.
+     *
+     * @param moves List of available moves
+     * @return Action with the index of the selected move or -1 (Struggle)
+     * @see Move#pp()
+     */
     private Action getRandomUsableMove(List<Move> moves) {
         int attempts = 0;
         while (attempts < 10) {
