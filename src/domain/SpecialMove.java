@@ -44,4 +44,8 @@ public class SpecialMove extends Move {
             currentPP--;
         }
     }
+    public void setPP(int newPP) {
+        this.currentPP = Math.max(0, Math.min(maxPP, newPP));
+    }
+
 }

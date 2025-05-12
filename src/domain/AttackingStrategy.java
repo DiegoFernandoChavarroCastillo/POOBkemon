@@ -16,11 +16,9 @@ public class AttackingStrategy implements BattleStrategy {
         Pokemon current = trainer.getActivePokemon();
         Pokemon opponent = battle.getOpponent().getActivePokemon();
 
-        // Primero considerar usar ítem
         Action itemAction = considerUsingItem(trainer, current);
         if (itemAction != null) return itemAction;
 
-        // Solo cambia si la salud es muy baja
         if (current.getHp() < current.getMaxHp() * 0.2) {
             int switchIndex = selectPokemonToSwitch(trainer, opponent);
             if (switchIndex != -1) {
@@ -28,7 +26,6 @@ public class AttackingStrategy implements BattleStrategy {
             }
         }
 
-        // Busca movimientos ofensivos con mayor poder
         List<Move> moves = current.getMoves();
         Move bestMove = null;
         int bestPower = 0;

@@ -14,6 +14,9 @@ import java.util.List;
 public class GameController {
     private Battle currentBattle;
     private BattleGUI gui;
+    private Timer turnTimer;
+    private int remainingSeconds;
+
 
     public GameController(BattleGUI gui) {
         this.gui = gui;
@@ -105,12 +108,50 @@ public class GameController {
 
     private void updateUI() {
         gui.updateBattleInfo(currentBattle.getBattleState());
+        startTurnTimer();
 
         // Si el panel de ataques está visible, actualizarlo
         if (gui.isAttackPanelVisible()) {
             showAttackOptions();
         }
     }
+    private void startTurnTimer() {
+        if (!currentBattle.getCurrentPlayer().isCPU()) {
+            if (turnTimer != null) {
+                turnTimer.stop();
+            }
+
+            remainingSeconds = 20;
+            gui.updateTurnTimer(remainingSeconds);
+
+            turnTimer = new Timer(1000, e -> {
+                remainingSeconds--;
+                gui.updateTurnTimer(remainingSeconds);
+                if (remainingSeconds <= 0) {
+                    turnTimer.stop();
+                    applyTurnTimeoutPenalty();
+                    endPlayerTurn();
+                }
+            });
+            turnTimer.start();
+        }
+    }
+    private void applyTurnTimeoutPenalty() {
+        Trainer current = currentBattle.getCurrentPlayer();
+        Pokemon p = current.getActivePokemon();
+
+        for (Move move : p.getMoves()) {
+            if (move instanceof SpecialMove && move.pp() > 0) {
+                ((SpecialMove) move).setPP(move.pp() - 1);
+            }
+        }
+
+        JOptionPane.showMessageDialog(gui,
+                current.getName() + " se tardó demasiado. ¡Todos los movimientos especiales pierden 1 PP!");
+    }
+
+
+
 
 
     public void showPlayerSetup(int gameMode) {
@@ -158,6 +199,10 @@ public class GameController {
         updateUI();
 
         if (!currentBattle.isFinished()) {
+            if (turnTimer != null) {
+                turnTimer.stop();
+            }
+
             endPlayerTurn();
         } else {
             checkBattleEnd();
@@ -187,6 +232,9 @@ public class GameController {
             int pokemonIndex = Arrays.asList(pokemons).indexOf(selected);
             currentBattle.performAction(Action.createSwitchPokemon(pokemonIndex));
             updateUI();
+            if (turnTimer != null) {
+                turnTimer.stop();
+            }
             endPlayerTurn();
         }
     }
@@ -234,6 +282,9 @@ public class GameController {
                 int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
                 currentBattle.performAction(Action.createUseItem(itemIndex, targetIndex));
                 updateUI();
+                if (turnTimer != null) {
+                    turnTimer.stop();
+                }
                 endPlayerTurn();
             }
         }

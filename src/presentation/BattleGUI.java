@@ -11,10 +11,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
-
 /**
  * The BattleGUI class represents the graphical user interface for the Pokémon battle game.
  * It handles ONLY the display of the battle scene and user interactions.
+ *
+ * @author Diego Chavarro
+ * @author Diego Rodriguez
+ * @version 1.0
  */
 public class BattleGUI extends JFrame {
     private JPanel panelSuperior, panelInferior, panelPok1, panelPok2, panelImagenes;
@@ -25,7 +28,12 @@ public class BattleGUI extends JFrame {
     private JPanel panelOpciones;
     private CardLayout cardLayout;
     private GameController controller;
+    private JLabel turnTimerLabel;
 
+    /**
+     * Constructs a new BattleGUI instance which initializes the main menu window.
+     * Sets default window properties and prepares the menu interface.
+     */
     public BattleGUI() {
         setTitle("POOBkemon Battle - Menú Principal");
         setSize(500, 400);
@@ -35,11 +43,15 @@ public class BattleGUI extends JFrame {
         setVisible(true);
     }
 
+    /**
+     * Prepares the main menu interface with game mode selection buttons.
+     * Creates panels for logo, buttons, and information display.
+     */
     private void prepareMenu() {
         JPanel menuPanel = new JPanel(new BorderLayout());
         menuPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Panel del logo (sin cambios)
+
         JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         try {
             BufferedImage logoImage = ImageIO.read(new File("src/sprites/Logo.png"));
@@ -54,11 +66,11 @@ public class BattleGUI extends JFrame {
             logoPanel.add(titleLabel);
         }
 
-        // Panel de botones
+
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 10, 10));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
-        // Botón PvP
+
         JButton pvpButton = createModeButton("Jugador vs Jugador (PvP)",
                 new Color(100, 150, 255),
                 "Modo PvP - Jugador vs Jugador\n\n" +
@@ -68,7 +80,7 @@ public class BattleGUI extends JFrame {
                         "- Movimientos para cada Pokémon\n" +
                         "- Ítems para usar en batalla");
 
-        // Botón PvM
+
         JButton pvmButton = createModeButton("Jugador vs Máquina (PvM)",
                 new Color(100, 200, 100),
                 "Modo PvM - Jugador vs Máquina\n\n" +
@@ -79,7 +91,6 @@ public class BattleGUI extends JFrame {
                         "- Estrategia de la CPU (Defensiva, Ofensiva, etc.)\n" +
                         "- Pokémon, movimientos e ítems de la CPU");
 
-        // Botón MvM
         JButton mvmButton = createModeButton("Máquina vs Máquina (MvM)",
                 new Color(255, 150, 100),
                 "Modo MvM - Máquina vs Máquina\n\n" +
@@ -89,7 +100,7 @@ public class BattleGUI extends JFrame {
                         "- 6 Pokémon y sus movimientos\n" +
                         "- Ítems disponibles");
 
-        // Configuración de acciones para los botones
+
         pvpButton.addActionListener(e -> controller.showPlayerSetup(1));
         pvmButton.addActionListener(e -> controller.showPlayerSetup(2));
         mvmButton.addActionListener(e -> controller.showPlayerSetup(3));
@@ -98,7 +109,7 @@ public class BattleGUI extends JFrame {
         buttonPanel.add(pvmButton);
         buttonPanel.add(mvmButton);
 
-        // Panel de información adicional
+
         JPanel infoPanel = new JPanel();
         infoPanel.setBackground(new Color(240, 240, 240));
         infoPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -106,12 +117,12 @@ public class BattleGUI extends JFrame {
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 
         JLabel infoLabel = new JLabel("<html><div style='text-align:center;'>" +
-                "<b>¡Nueva característica!</b><br>" +
-                "Ahora puedes configurar completamente los equipos CPU<br>" +
-                "en los modos Jugador vs Máquina y Máquina vs Máquina</div></html>");
+                "<b>Bienvenidos :)</b><br>" +
+                "<br>" +
+                "</div></html>");
         infoPanel.add(infoLabel);
 
-        // Ensamblar el panel principal
+
         menuPanel.add(logoPanel, BorderLayout.NORTH);
         menuPanel.add(buttonPanel, BorderLayout.CENTER);
         menuPanel.add(infoPanel, BorderLayout.SOUTH);
@@ -120,7 +131,14 @@ public class BattleGUI extends JFrame {
         add(menuPanel);
     }
 
-    // Método auxiliar para crear botones de modo con tooltips
+    /**
+     * Creates a styled button for game mode selection with hover effects and tooltip.
+     *
+     * @param text        The text to display on the button
+     * @param bgColor     The background color of the button
+     * @param description The description to show in the tooltip
+     * @return            A configured JButton instance
+     */
     private JButton createModeButton(String text, Color bgColor, String description) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 14));
@@ -128,7 +146,7 @@ public class BattleGUI extends JFrame {
         button.setForeground(Color.WHITE);
         button.setToolTipText(description); // Tooltip con descripción detallada
 
-        // Agregar efecto hover
+
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 button.setBackground(bgColor.brighter());
@@ -141,6 +159,10 @@ public class BattleGUI extends JFrame {
         return button;
     }
 
+    /**
+     * Sets up the battle window interface, replacing the main menu.
+     * Initializes all necessary UI components for the battle screen.
+     */
     public void setupBattleWindow() {
         getContentPane().removeAll();
         setTitle("POOBkemon Battle");
@@ -151,6 +173,12 @@ public class BattleGUI extends JFrame {
         repaint();
     }
 
+    /**
+     * Updates the battle interface with current game state information.
+     * Updates health bars, Pokémon sprites, turn indicators, and enables/disables buttons.
+     *
+     * @param state The current state of the battle containing all relevant information
+     */
     public void updateBattleInfo(BattleState state) {
         updatePokemonInfo(state.getPlayer1Pokemon(), labelInfo1, hpBar1, panelPok1);
         updatePokemonInfo(state.getPlayer2Pokemon(), labelInfo2, hpBar2, panelPok2);
@@ -191,6 +219,15 @@ public class BattleGUI extends JFrame {
         btnExtra.setEnabled(isHumanTurn);
     }
 
+    /**
+     * Updates the display information for a specific Pokémon.
+     * Handles HP bar color changes based on remaining health and visual indicators for fainted Pokémon.
+     *
+     * @param pokemon   The Pokémon whose information should be updated
+     * @param infoLabel The label for displaying Pokémon name and level
+     * @param hpBar     The progress bar representing Pokémon's HP
+     * @param panel     The panel containing the Pokémon's display elements
+     */
     private void updatePokemonInfo(Pokemon pokemon, JLabel infoLabel, JProgressBar hpBar, JPanel panel) {
         infoLabel.setText(pokemon.getName() + " Lv." + pokemon.getLevel());
         hpBar.setMaximum(pokemon.getMaxHp());
@@ -217,6 +254,14 @@ public class BattleGUI extends JFrame {
         }
     }
 
+    /**
+     * Loads and displays a Pokémon sprite image.
+     * Attempts to find the sprite file in several common formats.
+     * Falls back to text display if image cannot be loaded.
+     *
+     * @param label       The JLabel where the sprite will be displayed
+     * @param pokemonName The name of the Pokémon (used for filename)
+     */
     private void loadPokemonSprite(JLabel label, String pokemonName) {
         String basePath = "src/sprites/";
         int spriteWidth = 200;
@@ -241,6 +286,10 @@ public class BattleGUI extends JFrame {
         }
     }
 
+    /**
+     * Prepares and initializes all UI components for the battle window.
+     * Creates the layout structure and adds all necessary elements.
+     */
     private void prepareElements() {
         panelSuperior = new JPanel(new GridLayout(1, 2));
         panelSuperior.setBackground(new Color(194, 255, 82));
@@ -287,6 +336,10 @@ public class BattleGUI extends JFrame {
         panelInfo.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
         infoLabel = new JLabel("Panel de información");
         panelInfo.add(infoLabel);
+        turnTimerLabel = new JLabel("Tiempo restante: 20s");
+        turnTimerLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        panelInfo.add(turnTimerLabel);
+
 
         JPanel mainOptionsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         mainOptionsPanel.setBackground(Color.decode("#C8FC4B"));
@@ -328,6 +381,19 @@ public class BattleGUI extends JFrame {
         add(panelInferior, BorderLayout.SOUTH);
     }
 
+    /**
+     * Updates the turn timer display with the remaining time.
+     *
+     * @param secondsLeft The number of seconds remaining in the current turn
+     */
+    public void updateTurnTimer(int secondsLeft) {
+        turnTimerLabel.setText("Tiempo restante: " + secondsLeft + "s");
+    }
+
+    /**
+     * Sets up action listeners for all interactive buttons in the battle UI.
+     * Connects button clicks to controller methods.
+     */
     private void prepareListeners() {
         btnAtacar.addActionListener(e -> controller.showAttackOptions());
 
@@ -338,6 +404,12 @@ public class BattleGUI extends JFrame {
         btnExtra.addActionListener(e -> controller.handleSurrender());
     }
 
+    /**
+     * Displays attack options for the current Pokémon.
+     * Creates buttons for each available move and handles their selection.
+     *
+     * @param moves A list of moves available to the current Pokémon
+     */
     public void showAttackOptions(List<Move> moves) {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
         attackPanel.removeAll();
@@ -373,10 +445,21 @@ public class BattleGUI extends JFrame {
         attackPanel.repaint();
     }
 
+    /**
+     * Sets the game controller for this GUI.
+     * Establishes the connection between view and controller.
+     *
+     * @param controller The GameController instance to use
+     */
     public void setController(GameController controller) {
         this.controller = controller;
     }
-    // Nuevo método para mostrar descripción del modo
+
+    /**
+     * Displays a description of the selected game mode in a dialog window.
+     *
+     * @param message The description text to display
+     */
     private void showModeDescription(String message) {
         JOptionPane.showMessageDialog(this,
                 message,
@@ -384,18 +467,38 @@ public class BattleGUI extends JFrame {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /**
+     * Shows the battle end message and exits the application.
+     *
+     * @param message The result message to display
+     */
     public void showBattleEnd(String message) {
         JOptionPane.showMessageDialog(this, message);
         System.exit(0);
     }
+
+    /**
+     * Checks if the attack panel is currently visible.
+     *
+     * @return true if the attack panel is visible, false otherwise
+     */
     public boolean isAttackPanelVisible() {
         return ((JPanel)panelOpciones.getComponent(1)).getComponentCount() > 0;
     }
 
+    /**
+     * Shows the main options panel by switching the card layout.
+     */
     public void showMainOptions() {
         cardLayout.show(panelOpciones, "main");
     }
 
+    /**
+     * The main method to launch the application.
+     * Creates a GUI instance and connects it with a controller.
+     *
+     * @param args Command line arguments (not used)
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             BattleGUI gui = new BattleGUI();

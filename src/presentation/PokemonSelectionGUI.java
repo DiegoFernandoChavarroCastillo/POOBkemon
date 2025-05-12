@@ -78,7 +78,6 @@ public class PokemonSelectionGUI extends JDialog {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 
-        // Cargar sprite
         try {
             ImageIcon icon = new ImageIcon("src/sprites/" + pokemon.getName().toLowerCase() + ".png");
             Image scaledImage = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
@@ -91,7 +90,6 @@ public class PokemonSelectionGUI extends JDialog {
         JLabel nameLabel = new JLabel(pokemon.getName(), JLabel.CENTER);
         panel.add(nameLabel, BorderLayout.SOUTH);
 
-        // Manejar clic izquierdo (seleccionar) y derecho (deseleccionar)
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -117,7 +115,6 @@ public class PokemonSelectionGUI extends JDialog {
                     }
                 }
 
-                // Actualizar botón de confirmación
                 confirmButton.setText("Confirmar (" + selectedPokemons.size() + "/" + maxPokemons + ")");
                 confirmButton.setEnabled(selectedPokemons.size() > 0);
             }
