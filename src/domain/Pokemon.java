@@ -1,11 +1,12 @@
 package domain;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Pokemon {
+public class Pokemon implements Cloneable {
     private String name;
     private String type;
     private int hp;
@@ -56,6 +57,20 @@ public class Pokemon {
             }
         } else {
             MoveDatabase.getMove("STRUGGLE").use(this,target);
+        }
+    }
+    @Override
+    public Pokemon clone() {
+        try {
+            Pokemon cloned = (Pokemon) super.clone();
+            // Si hay atributos mutables, clónalos también aquí
+            cloned.moves = new ArrayList<>();
+            for (Move move : this.moves) {
+                cloned.moves.add(move.clone());
+            }
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError(); // Nunca debería ocurrir
         }
     }
 

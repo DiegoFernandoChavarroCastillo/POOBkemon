@@ -91,17 +91,33 @@ public class PokemonSelectionGUI extends JDialog {
         JLabel nameLabel = new JLabel(pokemon.getName(), JLabel.CENTER);
         panel.add(nameLabel, BorderLayout.SOUTH);
 
+        // Manejar clic izquierdo (seleccionar) y derecho (deseleccionar)
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (selectedPokemons.contains(pokemon)) {
-                    selectedPokemons.remove(pokemon);
-                    panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-                } else if (selectedPokemons.size() < maxPokemons) {
-                    selectedPokemons.add(pokemon);
-                    panel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 2));
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    // Clic izquierdo: seleccionar (si hay espacio)
+                    if (selectedPokemons.size() < maxPokemons) {
+                        Pokemon clonedPokemon = pokemon.clone();
+                        selectedPokemons.add(clonedPokemon);
+                        panel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 2));
+                    }
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    // Clic derecho: deseleccionar (si existe en la lista)
+                    Pokemon toRemove = null;
+                    for (Pokemon p : selectedPokemons) {
+                        if (p.getName().equals(pokemon.getName())) {
+                            toRemove = p;
+                            break;
+                        }
+                    }
+                    if (toRemove != null) {
+                        selectedPokemons.remove(toRemove);
+                        panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+                    }
                 }
 
+                // Actualizar botón de confirmación
                 confirmButton.setText("Confirmar (" + selectedPokemons.size() + "/" + maxPokemons + ")");
                 confirmButton.setEnabled(selectedPokemons.size() > 0);
             }

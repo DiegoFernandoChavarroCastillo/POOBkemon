@@ -17,8 +17,7 @@ public abstract class Move implements Cloneable {
         try {
             return (Move) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new AssertionError(); // No debería ocurrir
+            throw new AssertionError(); // Nunca debería ocurrir
         }
-
     }
 }

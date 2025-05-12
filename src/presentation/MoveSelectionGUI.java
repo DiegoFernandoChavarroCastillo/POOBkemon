@@ -149,7 +149,13 @@ public class MoveSelectionGUI extends JDialog {
             return;
         }
 
-        pokemon.setMoves(new ArrayList<>(selectedMoves));
+
+        List<Move> clonedMoves = new ArrayList<>();
+        for (Move move : selectedMoves) {
+            clonedMoves.add(move.clone());
+        }
+
+        pokemon.setMoves(clonedMoves);
         dispose();
     }
 

@@ -46,6 +46,12 @@
             moves.put("BLIZZARD", new SpecialMove("BLIZZARD", "ICE", 110, 70, 5, 0));
             // forcejeo
             moves.put("STRUGGLE", new StruggleMove());;
+
+            //pruebas
+            moves.put("p1", new SpecialMove("p1", "PSYCHIC", 1, 100, 1, 0));
+            moves.put("p2", new SpecialMove("p2", "PSYCHIC", 1, 100, 1, 0));
+            moves.put("p3", new SpecialMove("p3", "PSYCHIC", 1, 100, 1, 0));
+            moves.put("p4", new SpecialMove("p4", "PSYCHIC", 5, 70, 1, 0));
         }
 
 
