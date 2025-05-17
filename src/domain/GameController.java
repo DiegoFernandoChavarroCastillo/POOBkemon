@@ -448,26 +448,7 @@ public class GameController {
     }
 
 
-    /**
-     * Asigna ítems aleatorios a un entrenador para el modo supervivencia.
-     *
-     * @param trainer El entrenador al que se asignarán los ítems
-     */
-    private void assignRandomItems(Trainer trainer) {
-        trainer.getItems().clear();
 
-        // Añadir algunos ítems básicos
-        trainer.getItems().add(new Potion());
-        trainer.getItems().add(new SuperPotion());
-
-        // Añadir algunos ítems aleatorios adicionales
-        if (Math.random() > 0.5) {
-            trainer.getItems().add(new HyperPotion());
-        }
-        if (Math.random() > 0.7) {
-            trainer.getItems().add(new Revive());
-        }
-    }
     /**
      * Inicia una partida en modo supervivencia.
      * Crea entrenadores, asigna equipos aleatorios y configura la batalla.
@@ -492,9 +473,7 @@ public class GameController {
             player2.setActivePokemon(0);
         }
 
-        // Asignar ítems aleatorios
-        assignRandomItems(player1);
-        assignRandomItems(player2);
+
 
         // Crear la batalla
         this.currentBattle = new Battle(player1, player2);
