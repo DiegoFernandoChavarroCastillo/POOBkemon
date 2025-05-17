@@ -97,7 +97,6 @@ public class TypeChart {
         add("LUCHA", "PSIQUICO", 0.5);
         add("LUCHA", "FANT", 0.0);
 
-        // Puedes seguir con NORMAL, PLANTA, PSIQUICO, ROCA, SINIESTRO, TIERRA, VENENO, VOLADOR...
     }
 
     private static void add(String attackType, String targetType, double multiplier) {
