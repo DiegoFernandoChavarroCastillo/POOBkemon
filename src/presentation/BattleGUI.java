@@ -501,36 +501,65 @@ public class BattleGUI extends JFrame {
         this.gameMode = mode;
     }
 
+    /**
+     * Muestra la pantalla inicial de selección de modo.
+     * Este método reemplaza la llamada directa al menú principal.
+     */
     public void showInitialScreen() {
+        // Ocultar la ventana principal (menú) hasta que se seleccione el modo
+        setVisible(false);
+
+        // Mostrar la ventana de selección de modo
         ModeSelectionGUI selector = new ModeSelectionGUI(this);
         selector.setVisible(true);
     }
 
+    /**
+     * Método llamado desde ModeSelectionGUI cuando se selecciona el modo normal.
+     * Muestra la pantalla de selección de modo de juego (PvP, PvM, MvM).
+     */
     public void showGameModeSelection() {
-        // ya tienes este comportamiento actual (PvP, PvM, MvM)
-        // reutiliza prepareMenu() y lo demás
+        // Hacemos visible la ventana principal con el menú de modos de juego
+        setVisible(true);
+        // El menú ya está configurado en el constructor, así que solo lo hacemos visible
     }
 
+    /**
+     * Método llamado desde ModeSelectionGUI cuando se selecciona el modo supervivencia.
+     * Inicia directamente una partida en modo supervivencia.
+     */
     public void startSurvivalGame() {
-        // saltar selección PvP/PvM/MvM e ítems
+        // Ocultar cualquier ventana previa
+        setVisible(false);
+
+        // Solicitamos nombres de jugadores
         String player1 = JOptionPane.showInputDialog(this, "Nombre del Jugador 1:");
+        if (player1 == null || player1.trim().isEmpty()) {
+            player1 = "Jugador 1";
+        }
+
         String player2 = JOptionPane.showInputDialog(this, "Nombre del Jugador 2:");
+        if (player2 == null || player2.trim().isEmpty()) {
+            player2 = "Jugador 2";
+        }
 
-        controller.startSurvivalMode(player1, player2);
+        // Configurar la ventana de batalla
         setupBattleWindow();
+        setVisible(true);
 
-        // Falta esta línea para actualizar la UI después de inicializar la batalla
-        controller.updateUI();
+        // Iniciar el modo supervivencia
+        controller.startSurvivalMode(player1, player2);
     }
 
     /**
      * The main method to launch the application.
-     * Creates a GUI instance and connects it with a controller.
+     * Creates a GUI instance and muestra primero la selección de modo.
      *
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
         BattleGUI gui = new BattleGUI();
+        // En lugar de mostrar el menú principal, mostrar la selección de modo
         gui.showInitialScreen();
     }
 

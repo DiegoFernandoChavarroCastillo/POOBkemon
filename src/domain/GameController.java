@@ -108,15 +108,22 @@ public class GameController {
         }
     }
 
+    /**
+     * Método público para actualizar la interfaz de usuario con el estado actual de la batalla.
+     * Debe ser público para permitir llamadas desde BattleGUI.
+     */
     public void updateUI() {
-        gui.updateBattleInfo(currentBattle.getBattleState());
-        startTurnTimer();
+        if (currentBattle != null) {
+            gui.updateBattleInfo(currentBattle.getBattleState());
+            startTurnTimer();
 
-        // Si el panel de ataques está visible, actualizarlo
-        if (gui.isAttackPanelVisible()) {
-            showAttackOptions();
+            // Si el panel de ataques está visible, actualizarlo
+            if (gui.isAttackPanelVisible()) {
+                showAttackOptions();
+            }
         }
     }
+
     private void startTurnTimer() {
         if (!currentBattle.getCurrentPlayer().isCPU()) {
             if (turnTimer != null) {
@@ -439,14 +446,61 @@ public class GameController {
     public Battle getCurrentBattle() {
         return currentBattle;
     }
+
+
+    /**
+     * Asigna ítems aleatorios a un entrenador para el modo supervivencia.
+     *
+     * @param trainer El entrenador al que se asignarán los ítems
+     */
+    private void assignRandomItems(Trainer trainer) {
+        trainer.getItems().clear();
+
+        // Añadir algunos ítems básicos
+        trainer.getItems().add(new Potion());
+        trainer.getItems().add(new SuperPotion());
+
+        // Añadir algunos ítems aleatorios adicionales
+        if (Math.random() > 0.5) {
+            trainer.getItems().add(new HyperPotion());
+        }
+        if (Math.random() > 0.7) {
+            trainer.getItems().add(new Revive());
+        }
+    }
+    /**
+     * Inicia una partida en modo supervivencia.
+     * Crea entrenadores, asigna equipos aleatorios y configura la batalla.
+     *
+     * @param player1Name Nombre del jugador 1
+     * @param player2Name Nombre del jugador 2
+     */
     public void startSurvivalMode(String player1Name, String player2Name) {
+        // Crear entrenadores
         Trainer player1 = new Trainer(player1Name, "Rojo");
         Trainer player2 = new Trainer(player2Name, "Azul");
 
+        // Asignar equipos aleatorios
         assignRandomTeam(player1);
         assignRandomTeam(player2);
 
-        this.currentBattle = new Battle(player1, player2); // principio de inversión de dependencias
+        // Asignar Pokémon activos
+        if (!player1.getTeam().getPokemons().isEmpty()) {
+            player1.setActivePokemon(0);
+        }
+        if (!player2.getTeam().getPokemons().isEmpty()) {
+            player2.setActivePokemon(0);
+        }
+
+        // Asignar ítems aleatorios
+        assignRandomItems(player1);
+        assignRandomItems(player2);
+
+        // Crear la batalla
+        this.currentBattle = new Battle(player1, player2);
+
+        // Actualizar la interfaz
+        updateUI();
     }
 
     private void assignRandomTeam(Trainer trainer) {
