@@ -108,7 +108,7 @@ public class GameController {
         }
     }
 
-    private void updateUI() {
+    public void updateUI() {
         gui.updateBattleInfo(currentBattle.getBattleState());
         startTurnTimer();
 

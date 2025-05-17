@@ -518,6 +518,9 @@ public class BattleGUI extends JFrame {
 
         controller.startSurvivalMode(player1, player2);
         setupBattleWindow();
+
+        // Falta esta línea para actualizar la UI después de inicializar la batalla
+        controller.updateUI();
     }
 
     /**
