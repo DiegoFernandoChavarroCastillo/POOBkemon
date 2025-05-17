@@ -16,6 +16,8 @@ public class GameController {
     private BattleGUI gui;
     private Timer turnTimer;
     private int remainingSeconds;
+    public static final int MODO_NORMAL = 0;
+    public static final int MODO_SUPERVIVENCIA = 1;
 
 
     public GameController(BattleGUI gui) {
@@ -436,5 +438,22 @@ public class GameController {
 
     public Battle getCurrentBattle() {
         return currentBattle;
+    }
+    public void startSurvivalMode(String player1Name, String player2Name) {
+        Trainer player1 = new Trainer(player1Name, "Rojo");
+        Trainer player2 = new Trainer(player2Name, "Azul");
+
+        assignRandomTeam(player1);
+        assignRandomTeam(player2);
+
+        this.currentBattle = new Battle(player1, player2); // principio de inversión de dependencias
+    }
+
+    private void assignRandomTeam(Trainer trainer) {
+        for (int i = 0; i < 6; i++) {
+            Pokemon random = PokemonDataBase.getRandomPokemon(); // debes implementar esto
+            random.setMoves(MoveDatabase.getRandomMoves(4)); // también debes implementar esto
+            trainer.addPokemonToTeam(random);
+        }
     }
 }

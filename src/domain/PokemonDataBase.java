@@ -59,4 +59,14 @@ public class PokemonDataBase {
     public static Set<String> getAvailablePokemonNames() {
         return pokemons.keySet();
     }
+
+    public static Pokemon getRandomPokemon() {
+        List<String> names = new ArrayList<>(pokemons.keySet());
+        if (names.isEmpty()) {
+            throw new IllegalStateException("No hay pokémones disponibles.");
+        }
+        String randomName = names.get(new Random().nextInt(names.size()));
+        return getPokemon(randomName); // ya devuelve una copia con lista de movimientos separada
+    }
+
 }

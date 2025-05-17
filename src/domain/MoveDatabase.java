@@ -1,9 +1,6 @@
     package domain;
 
-    import java.util.ArrayList;
-    import java.util.HashMap;
-    import java.util.List;
-    import java.util.Map;
+    import java.util.*;
 
     public class MoveDatabase {
         private static final Map<String, Move> moves = new HashMap<>();
@@ -61,6 +58,19 @@
         }
         public static List<Move> getAvailableMoves() {
             return new ArrayList<>(moves.values());
+        }
+
+        public static List<Move> getRandomMoves(int n) {
+            List<Move> available = new ArrayList<>(moves.values());
+            if (available.size() < n) {
+                throw new IllegalStateException("No hay suficientes movimientos disponibles.");
+            }
+            Collections.shuffle(available); // aleatorizar
+            List<Move> selected = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                selected.add(available.get(i).clone());
+            }
+            return selected;
         }
 
     }

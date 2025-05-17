@@ -29,6 +29,7 @@ public class BattleGUI extends JFrame {
     private CardLayout cardLayout;
     private GameController controller;
     private JLabel turnTimerLabel;
+    private int gameMode;
 
     /**
      * Constructs a new BattleGUI instance which initializes the main menu window.
@@ -41,6 +42,9 @@ public class BattleGUI extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         prepareMenu();
         setVisible(true);
+        controller = new GameController(this); // <- inicializa controller correctamente
+        setController(controller);
+
     }
 
     /**
@@ -493,6 +497,29 @@ public class BattleGUI extends JFrame {
         cardLayout.show(panelOpciones, "main");
     }
 
+    public void setGameMode(int mode) {
+        this.gameMode = mode;
+    }
+
+    public void showInitialScreen() {
+        ModeSelectionGUI selector = new ModeSelectionGUI(this);
+        selector.setVisible(true);
+    }
+
+    public void showGameModeSelection() {
+        // ya tienes este comportamiento actual (PvP, PvM, MvM)
+        // reutiliza prepareMenu() y lo demás
+    }
+
+    public void startSurvivalGame() {
+        // saltar selección PvP/PvM/MvM e ítems
+        String player1 = JOptionPane.showInputDialog(this, "Nombre del Jugador 1:");
+        String player2 = JOptionPane.showInputDialog(this, "Nombre del Jugador 2:");
+
+        controller.startSurvivalMode(player1, player2);
+        setupBattleWindow();
+    }
+
     /**
      * The main method to launch the application.
      * Creates a GUI instance and connects it with a controller.
@@ -500,10 +527,9 @@ public class BattleGUI extends JFrame {
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            BattleGUI gui = new BattleGUI();
-            GameController controller = new GameController(gui);
-            gui.setController(controller);
-        });
+        BattleGUI gui = new BattleGUI();
+        gui.showInitialScreen();
     }
+
+
 }
