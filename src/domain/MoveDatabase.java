@@ -49,6 +49,12 @@
             // forcejeo
             moves.put("STRUGGLE", new StruggleMove());;
 
+            moves.put("Double Team", new StatusMove(
+                    "Double Team", "Normal", 15,
+                    new Effect(EffectType.EVASION_UP, "Increases evasion by one stage")
+            ));
+
+
             //pruebas
             moves.put("p1", new SpecialMove("p1", "PSYCHIC", 1, 100, 1, 0));
             moves.put("p2", new SpecialMove("p2", "PSYCHIC", 1, 100, 1, 0));

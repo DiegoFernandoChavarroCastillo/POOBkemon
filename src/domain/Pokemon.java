@@ -30,7 +30,7 @@ public class Pokemon implements Cloneable, Serializable {
     private boolean hasSubstitute = false;
     private int maxHp;
     private Map<String, Integer> statBoosts = new HashMap<>();
-
+    private int evasionStage = 0;
     private static final int LEVEL = 100;
 
     /**
@@ -274,4 +274,23 @@ public class Pokemon implements Cloneable, Serializable {
     public int getAccuracy() { return accuracy; }
     public int getEvasion() { return evasion; }
     public List<Move> getMoves() { return moves; }
+    public void increaseEvasionStage() {
+        if (evasionStage < 6) {
+            evasionStage++;
+            System.out.println(name + " aumentó su evasión a nivel " + evasionStage);
+        }
+    }
+
+    public int getEvasionStage() {
+        return evasionStage;
+    }
+
+    public double getEvasionMultiplier() {
+        int stage = evasionStage;
+        if (stage >= 0) {
+            return (3.0 + stage) / 3.0;
+        } else {
+            return 3.0 / (3.0 - stage);
+        }
+    }
 }
