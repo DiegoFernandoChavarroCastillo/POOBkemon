@@ -2,18 +2,21 @@ package domain;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Representa el equipo de un entrenador, conformado por hasta 6 Pokémon.
  */
 public class Team implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private List<Pokemon> pokemons;
     private Pokemon activePokemon;
     private int indexActive;
-    private static final long serialVersionUID = 1L;
 
+    /**
+     * Crea un equipo vacío.
+     */
     public Team() {
         pokemons = new ArrayList<>();
         indexActive = 0;
@@ -21,7 +24,9 @@ public class Team implements Serializable {
     }
 
     /**
-     * Agrega un Pokémon al equipo.
+     * Agrega un Pokémon al equipo si hay espacio disponible (máximo 6).
+     *
+     * @param p el Pokémon a agregar
      */
     public void addPokemon(Pokemon p) {
         if (pokemons.size() < 6) {
@@ -35,6 +40,7 @@ public class Team implements Serializable {
 
     /**
      * Establece como Pokémon activo el de la posición indicada.
+     *
      * @param index índice del Pokémon a establecer como activo
      */
     public void setActivePokemon(int index) {
@@ -46,6 +52,8 @@ public class Team implements Serializable {
 
     /**
      * Cambia el Pokémon activo por el de la posición indicada.
+     *
+     * @param index índice del Pokémon al que se desea cambiar
      */
     public void switchPokemon(int index) {
         if (index >= 0 && index < pokemons.size() && pokemons.get(index).getHp() > 0) {
@@ -55,14 +63,18 @@ public class Team implements Serializable {
     }
 
     /**
-     * Verifica si todos los Pokémon están debilitados.
+     * Verifica si todos los Pokémon del equipo están debilitados.
+     *
+     * @return true si todos están con HP 0 o menos
      */
     public boolean isAllFainted() {
         return pokemons.stream().allMatch(p -> p.getHp() <= 0);
     }
 
     /**
-     * Devuelve la lista de Pokémon disponibles (no debilitados).
+     * Devuelve la lista de Pokémon no debilitados.
+     *
+     * @return lista de Pokémon con HP > 0
      */
     public List<Pokemon> getAvailablePokemons() {
         List<Pokemon> available = new ArrayList<>();
@@ -75,8 +87,9 @@ public class Team implements Serializable {
     }
 
     /**
-     * Encuentra el índice del primer Pokémon saludable en el equipo (excluyendo al activo)
-     * @return índice del Pokémon saludable, o -1 si no hay ninguno
+     * Encuentra el índice del primer Pokémon saludable que no sea el activo.
+     *
+     * @return índice o -1 si no hay ninguno
      */
     public int findHealthyPokemon() {
         for (int i = 0; i < pokemons.size(); i++) {
@@ -89,35 +102,45 @@ public class Team implements Serializable {
     }
 
     /**
-     * Verifica si hay Pokémon saludables disponibles para cambiar
+     * Verifica si hay al menos un Pokémon saludable que no sea el activo.
+     *
+     * @return true si hay alguno disponible
      */
     public boolean hasHealthyPokemon() {
         return findHealthyPokemon() != -1;
     }
 
+    /**
+     * @return el Pokémon actualmente activo del equipo
+     */
     public Pokemon getActivePokemon() {
         return activePokemon;
     }
 
+    /**
+     * @return una copia de la lista de todos los Pokémon del equipo
+     */
     public List<Pokemon> getPokemons() {
-        return new ArrayList<>(pokemons); // Devuelve una copia para evitar modificaciones externas
+        return new ArrayList<>(pokemons);
     }
 
+    /**
+     * @return el índice del Pokémon activo
+     */
     public int getActiveIndex() {
         return indexActive;
     }
 
     /**
-     * Cambia automáticamente al siguiente Pokémon disponible cuando el activo se debilita.
-     * @return true si encontró un Pokémon disponible, false si todos están debilitados
+     * Cambia automáticamente al siguiente Pokémon disponible si el actual está debilitado.
+     *
+     * @return true si el cambio fue exitoso, false si todos están debilitados
      */
     public boolean setActivePokemonToNextAvailable() {
-        // Si el Pokémon actual aún tiene vida, no hacer nada
         if (activePokemon != null && activePokemon.getHp() > 0) {
             return true;
         }
 
-        // Buscar el siguiente Pokémon disponible
         for (int i = 0; i < pokemons.size(); i++) {
             int nextIndex = (indexActive + i + 1) % pokemons.size();
             Pokemon nextPokemon = pokemons.get(nextIndex);
@@ -128,10 +151,13 @@ public class Team implements Serializable {
             }
         }
 
-        // Si no hay Pokémon disponibles
         activePokemon = null;
         return false;
     }
+
+    /**
+     * @return número de Pokémon con HP > 0 en el equipo
+     */
     public int getHealthyCount() {
         return (int) pokemons.stream()
                 .filter(p -> p.getHp() > 0)

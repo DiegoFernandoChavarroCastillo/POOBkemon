@@ -3,6 +3,10 @@
     import java.io.Serializable;
     import java.util.*;
 
+    /**
+     * Base de datos de movimientos disponibles en el juego.
+     * Proporciona acceso a movimientos predefinidos y utilidades para obtener copias y selecciones aleatorias.
+     */
     public class MoveDatabase implements Serializable {
         private static final Map<String, Move> moves = new HashMap<>();
         private static final long serialVersionUID = 1L;
@@ -52,15 +56,33 @@
             moves.put("p4", new SpecialMove("p4", "PSYCHIC", 5, 70, 1, 0));
         }
 
-
+        /**
+         * Devuelve una copia del movimiento con el nombre especificado.
+         *
+         * @param name nombre del movimiento
+         * @return instancia clonada del movimiento o null si no existe
+         */
         public static Move getMove(String name) {
             Move base = moves.get(name.toUpperCase());
             return base != null ? base.clone() : null;
         }
+
+        /**
+         * Devuelve una lista con todos los movimientos disponibles.
+         *
+         * @return lista de movimientos
+         */
         public static List<Move> getAvailableMoves() {
             return new ArrayList<>(moves.values());
         }
 
+        /**
+         * Devuelve una lista aleatoria de movimientos clonados.
+         *
+         * @param n número de movimientos a seleccionar
+         * @return lista de movimientos clonados aleatoriamente
+         * @throws IllegalStateException si no hay suficientes movimientos
+         */
         public static List<Move> getRandomMoves(int n) {
             List<Move> available = new ArrayList<>(moves.values());
             if (available.size() < n) {

@@ -11,7 +11,6 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-
 public class GameController {
     private Battle currentBattle;
     private BattleGUI gui;
@@ -21,21 +20,33 @@ public class GameController {
     public static final int MODO_SUPERVIVENCIA = 1;
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Crea un nuevo controlador del juego con la interfaz de usuario dada.
+     *
+     * @param gui la interfaz gráfica de la batalla
+     */
     public GameController(BattleGUI gui) {
         this.gui = gui;
     }
 
+    /**
+     * Inicia el juego con el modo y los nombres de los jugadores especificados.
+     * Configura la selección de Pokémon, ítems y estrategias según el modo de juego.
+     *
+     * @param gameMode    el modo de juego (1 = PvP, 2 = PvM, 3 = MvM)
+     * @param player1Name nombre del primer jugador
+     * @param player2Name nombre del segundo jugador
+     */
     public void startGame(int gameMode, String player1Name, String player2Name) {
         Trainer player1 = gameMode == 3 ? new CPUTrainer("CPU Ash", "Rojo") : new Trainer(player1Name, "Rojo");
         Trainer player2 = gameMode == 1 ? new Trainer(player2Name, "Azul") : new CPUTrainer("CPU Gary", "Azul");
 
         showPokemonSelection(player1, () -> {
             showItemSelection(player1, () -> {
-                // Modo PvP (1) o MvM (3) con selección completa
                 if (gameMode == 1 || gameMode == 3) {
                     showPokemonSelection(player2, () -> {
                         showItemSelection(player2, () -> {
-                            if (gameMode == 3) { // Solo en MvM seleccionamos estrategias
+                            if (gameMode == 3) {
                                 selectCPUStrategy((CPUTrainer) player1, () -> {
                                     selectCPUStrategy((CPUTrainer) player2, () -> {
                                         startBattle(player1, player2);
@@ -46,9 +57,7 @@ public class GameController {
                             }
                         });
                     });
-                }
-                // Modo PvM (2) con selección de CPU
-                else {
+                } else {
                     selectCPUStrategy((CPUTrainer) player2, () -> {
                         showPokemonSelection(player2, () -> {
                             showItemSelection(player2, () -> {
@@ -61,7 +70,12 @@ public class GameController {
         });
     }
 
-    // Nuevo método para seleccionar estrategia de CPU
+    /**
+     * Permite seleccionar la estrategia de combate de un entrenador CPU.
+     *
+     * @param cpu        el entrenador CPU
+     * @param onComplete acción a ejecutar tras la selección de estrategia
+     */
     private void selectCPUStrategy(CPUTrainer cpu, Runnable onComplete) {
         String[] options = {"Defensivo", "Ofensivo", "Cambiador", "Experto"};
         String selected = (String) JOptionPane.showInputDialog(
@@ -92,6 +106,13 @@ public class GameController {
         onComplete.run();
     }
 
+    /**
+     * Inicia una nueva batalla entre dos entrenadores.
+     * Si ambos son CPU, se activa la batalla automática.
+     *
+     * @param player1 el primer entrenador
+     * @param player2 el segundo entrenador
+     */
     private void startBattle(Trainer player1, Trainer player2) {
         if (!player1.getTeam().getPokemons().isEmpty()) {
             player1.setActivePokemon(0);
@@ -110,21 +131,24 @@ public class GameController {
     }
 
     /**
-     * Método público para actualizar la interfaz de usuario con el estado actual de la batalla.
-     * Debe ser público para permitir llamadas desde BattleGUI.
+     * Actualiza la interfaz gráfica con la información actual de la batalla.
+     * Este método es público para que pueda ser invocado desde la GUI.
      */
     public void updateUI() {
         if (currentBattle != null) {
             gui.updateBattleInfo(currentBattle.getBattleState());
             startTurnTimer();
 
-            // Si el panel de ataques está visible, actualizarlo
             if (gui.isAttackPanelVisible()) {
                 showAttackOptions();
             }
         }
     }
 
+    /**
+     * Inicia un temporizador para limitar el tiempo del turno del jugador.
+     * Si se agota el tiempo, se aplica una penalización y se finaliza el turno.
+     */
     private void startTurnTimer() {
         if (!currentBattle.getCurrentPlayer().isCPU()) {
             if (turnTimer != null) {
@@ -146,6 +170,11 @@ public class GameController {
             turnTimer.start();
         }
     }
+
+    /**
+     * Aplica una penalización al jugador actual por exceder el tiempo del turno.
+     * Todos los movimientos especiales pierden 1 punto de poder (PP).
+     */
     private void applyTurnTimeoutPenalty() {
         Trainer current = currentBattle.getCurrentPlayer();
         Pokemon p = current.getActivePokemon();
@@ -160,10 +189,11 @@ public class GameController {
                 current.getName() + " se tardó demasiado. ¡Todos los movimientos especiales pierden 1 PP!");
     }
 
-
-
-
-
+    /**
+     * Muestra un cuadro de diálogo para configurar los nombres de los jugadores según el modo de juego.
+     *
+     * @param gameMode modo de juego seleccionado (1 = PvP, 2 = PvM, 3 = MvM)
+     */
     public void showPlayerSetup(int gameMode) {
         JPanel setupPanel = new JPanel(new GridLayout(0, 1, 10, 10));
         setupPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -198,12 +228,20 @@ public class GameController {
         }
     }
 
+    /**
+     * Muestra las opciones de ataque disponibles para el jugador actual.
+     */
     public void showAttackOptions() {
         Trainer current = currentBattle.getCurrentPlayer();
         List<Move> moves = current.getActivePokemon().getMoves();
         gui.showAttackOptions(moves);
     }
 
+    /**
+     * Ejecuta el ataque seleccionado por el jugador y actualiza la interfaz.
+     *
+     * @param moveIndex índice del movimiento seleccionado
+     */
     public void executeAttack(int moveIndex) {
         currentBattle.performAction(Action.createAttack(moveIndex));
         updateUI();
@@ -219,6 +257,9 @@ public class GameController {
         }
     }
 
+    /**
+     * Muestra un cuadro de diálogo para cambiar el Pokémon activo del jugador actual.
+     */
     public void showSwitchPokemonDialog() {
         Trainer current = currentBattle.getCurrentPlayer();
         String[] pokemons = new String[current.getTeam().getPokemons().size()];
@@ -249,6 +290,10 @@ public class GameController {
         }
     }
 
+    /**
+     * Muestra un cuadro de diálogo para que el jugador actual seleccione un ítem y un objetivo.
+     * Si hay ítems disponibles, permite usarlos sobre un Pokémon del equipo.
+     */
     public void showItemSelectionDialog() {
         Trainer current = currentBattle.getCurrentPlayer();
 
@@ -300,6 +345,10 @@ public class GameController {
         }
     }
 
+    /**
+     * Muestra un cuadro de diálogo para que el jugador actual confirme si desea rendirse.
+     * Si acepta, se muestra el mensaje de derrota.
+     */
     public void handleSurrender() {
         int option = JOptionPane.showConfirmDialog(
                 gui,
@@ -312,6 +361,10 @@ public class GameController {
         }
     }
 
+    /**
+     * Finaliza el turno del jugador actual, cambia el turno y actualiza la interfaz.
+     * Si el siguiente jugador es CPU, ejecuta automáticamente su turno.
+     */
     private void endPlayerTurn() {
         if (currentBattle.isFinished()) {
             checkBattleEnd();
@@ -321,7 +374,6 @@ public class GameController {
         currentBattle.changeTurn();
         updateUI();
 
-
         gui.showMainOptions();
 
         if (!currentBattle.isFinished() && currentBattle.getCurrentPlayer().isCPU()) {
@@ -329,6 +381,10 @@ public class GameController {
         }
     }
 
+    /**
+     * Ejecuta el turno del jugador CPU de forma automatizada y recursiva si sigue siendo CPU.
+     * Se utiliza un pequeño retardo entre turnos para simular tiempo de juego.
+     */
     private void executeCpuTurn() {
         Timer timer = new Timer(1000, e -> {
             if (!currentBattle.isFinished()) {
@@ -340,7 +396,6 @@ public class GameController {
                     updateUI();
 
                     if (currentBattle.getCurrentPlayer().isCPU()) {
-                        // Ejecutar siguiente turno de CPU con un pequeño delay
                         new Timer(1000, ev -> executeCpuTurn()).start();
                     } else {
                         gui.showMainOptions();
@@ -354,6 +409,10 @@ public class GameController {
         timer.start();
     }
 
+    /**
+     * Inicia una batalla automática completa entre dos entrenadores CPU.
+     * El combate continúa de forma automatizada hasta que finalice.
+     */
     private void startAutoBattle() {
         Timer timer = new Timer(1500, e -> {
             if (!currentBattle.isFinished()) {
@@ -371,6 +430,9 @@ public class GameController {
         timer.start();
     }
 
+    /**
+     * Verifica si la batalla ha terminado y muestra el resultado correspondiente.
+     */
     private void checkBattleEnd() {
         if (currentBattle.isFinished()) {
             Trainer winner = currentBattle.getWinner();
@@ -381,7 +443,13 @@ public class GameController {
         }
     }
 
-
+    /**
+     * Muestra la interfaz de selección de Pokémon para un entrenador.
+     * Luego de seleccionar, se procede a seleccionar los movimientos de cada Pokémon.
+     *
+     * @param trainer    el entrenador que selecciona Pokémon
+     * @param onComplete acción a ejecutar al finalizar la selección
+     */
     private void showPokemonSelection(Trainer trainer, Runnable onComplete) {
         PokemonSelectionGUI selectionGUI = new PokemonSelectionGUI(gui, trainer, 6, selectedPokemons -> {
             selectMovesForPokemons(selectedPokemons, onComplete);
@@ -389,6 +457,13 @@ public class GameController {
         selectionGUI.setVisible(true);
     }
 
+    /**
+     * Inicia el proceso de selección de movimientos para cada Pokémon del equipo.
+     * El proceso es recursivo hasta que todos los Pokémon hayan seleccionado sus movimientos.
+     *
+     * @param pokemons   lista de Pokémon a configurar
+     * @param onComplete acción a ejecutar al finalizar la selección
+     */
     private void selectMovesForPokemons(List<Pokemon> pokemons, Runnable onComplete) {
         if (pokemons.isEmpty()) {
             onComplete.run();
@@ -405,6 +480,12 @@ public class GameController {
         moveGUI.setVisible(true);
     }
 
+    /**
+     * Asigna un equipo aleatorio de Pokémon con movimientos aleatorios a un entrenador CPU.
+     *
+     * @param cpu        entrenador CPU
+     * @param onComplete acción a ejecutar al finalizar la asignación
+     */
     private void selectPokemonForCPU(Trainer cpu, Runnable onComplete) {
         List<String> available = new ArrayList<>(PokemonDataBase.getAvailablePokemonNames());
         Collections.shuffle(available);
@@ -418,12 +499,23 @@ public class GameController {
         onComplete.run();
     }
 
+    /**
+     * Asigna movimientos aleatorios a un Pokémon.
+     *
+     * @param pokemon el Pokémon al que se le asignarán los movimientos
+     */
     private void selectRandomMoves(Pokemon pokemon) {
         List<Move> allMoves = MoveDatabase.getAvailableMoves();
         Collections.shuffle(allMoves);
         pokemon.setMoves(allMoves.subList(0, Math.min(4, allMoves.size())));
     }
 
+    /**
+     * Muestra la interfaz de selección de ítems para un entrenador.
+     *
+     * @param trainer    el entrenador que selecciona los ítems
+     * @param onComplete acción a ejecutar al finalizar
+     */
     private void showItemSelection(Trainer trainer, Runnable onComplete) {
         SwingUtilities.invokeLater(() -> {
             ItemSelectionGUI.showItemSelection(gui, trainer);
@@ -431,6 +523,12 @@ public class GameController {
         });
     }
 
+    /**
+     * Asigna ítems aleatorios al entrenador CPU.
+     *
+     * @param cpu        entrenador CPU
+     * @param onComplete acción a ejecutar al finalizar
+     */
     private void selectItemsForCPU(Trainer cpu, Runnable onComplete) {
         List<Item> items = Arrays.asList(
                 new Potion(),
@@ -444,29 +542,28 @@ public class GameController {
         onComplete.run();
     }
 
+    /**
+     * Retorna la batalla actual en curso.
+     *
+     * @return objeto de tipo Battle que representa la batalla actual
+     */
     public Battle getCurrentBattle() {
         return currentBattle;
     }
 
-
-
     /**
-     * Inicia una partida en modo supervivencia.
-     * Crea entrenadores, asigna equipos aleatorios y configura la batalla.
+     * Inicia una partida en modo supervivencia con equipos aleatorios.
      *
-     * @param player1Name Nombre del jugador 1
-     * @param player2Name Nombre del jugador 2
+     * @param player1Name nombre del jugador 1
+     * @param player2Name nombre del jugador 2
      */
     public void startSurvivalMode(String player1Name, String player2Name) {
-        // Crear entrenadores
         Trainer player1 = new Trainer(player1Name, "Rojo");
         Trainer player2 = new Trainer(player2Name, "Azul");
 
-        // Asignar equipos aleatorios
         assignRandomTeam(player1);
         assignRandomTeam(player2);
 
-        // Asignar Pokémon activos
         if (!player1.getTeam().getPokemons().isEmpty()) {
             player1.setActivePokemon(0);
         }
@@ -474,25 +571,31 @@ public class GameController {
             player2.setActivePokemon(0);
         }
 
-
-
-        // Crear la batalla
         this.currentBattle = new Battle(player1, player2);
 
-        // Actualizar la interfaz
         updateUI();
     }
 
+    /**
+     * Asigna un equipo aleatorio de 6 Pokémon con movimientos aleatorios a un entrenador.
+     *
+     * @param trainer entrenador al que se le asignará el equipo
+     */
     private void assignRandomTeam(Trainer trainer) {
         for (int i = 0; i < 6; i++) {
-            Pokemon random = PokemonDataBase.getRandomPokemon(); // debes implementar esto
-            random.setMoves(MoveDatabase.getRandomMoves(4)); // también debes implementar esto
+            Pokemon random = PokemonDataBase.getRandomPokemon();
+            random.setMoves(MoveDatabase.getRandomMoves(4));
             trainer.addPokemonToTeam(random);
         }
     }
+
+    /**
+     * Carga el estado guardado de una partida, incluyendo la batalla y el modo de juego.
+     *
+     * @param gameState estado del juego a cargar
+     */
     public void loadGameState(GameState gameState) {
         this.currentBattle = gameState.getBattle();
         this.gui.setGameMode(gameState.getGameMode());
     }
-
 }

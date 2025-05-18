@@ -12,13 +12,13 @@ import java.util.Map;
 import java.util.List;
 
 /**
- * The BattleGUI class represents the graphical user interface for the Pokémon battle game.
- * It handles ONLY the display of the battle scene and user interactions.
+ * La clase BattleGUI representa la interfaz gráfica para el juego de batalla de Pokémon.
+ * Se encarga exclusivamente de mostrar la escena de combate y gestionar la interacción con el usuario.
+ * Controla el flujo visual de la partida, la carga de sprites, las barras de vida, y los botones de acción.
  *
- * @author Diego Chavarro
- * @author Diego Rodriguez
- * @version 1.0
+ * Autores: Diego Chavarro, Diego Rodríguez
  */
+
 public class BattleGUI extends JFrame {
     private JPanel panelSuperior, panelInferior, panelPok1, panelPok2, panelImagenes;
     private JLabel labelInfo1, labelInfo2, infoLabel;
@@ -32,9 +32,10 @@ public class BattleGUI extends JFrame {
     private int gameMode;
 
     /**
-     * Constructs a new BattleGUI instance which initializes the main menu window.
-     * Sets default window properties and prepares the menu interface.
+     * Construye una nueva instancia de BattleGUI que inicializa la ventana del menú principal.
+     * Configura las propiedades predeterminadas de la ventana y prepara la interfaz del menú.
      */
+
     public BattleGUI() {
         setTitle("POOBkemon Battle - Menú Principal");
         setSize(500, 400);
@@ -129,7 +130,6 @@ public class BattleGUI extends JFrame {
         }
     }
 
-    // Todos los demás métodos existentes se mantienen exactamente igual...
 
     /**
      * Prepares the main menu interface with game mode selection buttons.
@@ -213,12 +213,12 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Creates a styled button for game mode selection with hover effects and tooltip.
+     * Crea un botón para la selección del modo de juego, con efectos al pasar el cursor y descripción emergente.
      *
-     * @param text        The text to display on the button
-     * @param bgColor     The background color of the button
-     * @param description The description to show in the tooltip
-     * @return            A configured JButton instance
+     * @param text        El texto que se mostrará en el botón
+     * @param bgColor     El color de fondo del botón
+     * @param description La descripción que se mostrará como ayuda emergente (tooltip)
+     * @return            Una instancia de JButton configurada
      */
     private JButton createModeButton(String text, Color bgColor, String description) {
         JButton button = new JButton(text);
@@ -240,8 +240,8 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Sets up the battle window interface, replacing the main menu.
-     * Initializes all necessary UI components for the battle screen.
+     * Configura la interfaz de la ventana de batalla, reemplazando el menú principal.
+     * Inicializa todos los componentes gráficos necesarios para la pantalla de combate.
      */
     public void setupBattleWindow() {
         getContentPane().removeAll();
@@ -254,11 +254,12 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Updates the battle interface with current game state information.
-     * Updates health bars, Pokémon sprites, turn indicators, and enables/disables buttons.
+     * Actualiza la interfaz de batalla con la información actual del estado del juego.
+     * Refresca las barras de vida, los sprites de los Pokémon, el indicador de turno y habilita o deshabilita los botones.
      *
-     * @param state The current state of the battle containing all relevant information
+     * @param state El estado actual de la batalla que contiene toda la información relevante
      */
+
     public void updateBattleInfo(BattleState state) {
         updatePokemonInfo(state.getPlayer1Pokemon(), labelInfo1, hpBar1, panelPok1);
         updatePokemonInfo(state.getPlayer2Pokemon(), labelInfo2, hpBar2, panelPok2);
@@ -300,14 +301,15 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Updates the display information for a specific Pokémon.
-     * Handles HP bar color changes based on remaining health and visual indicators for fainted Pokémon.
+     * Actualiza la información visual de un Pokémon específico.
+     * Gestiona el color de la barra de vida según la salud restante y los indicadores visuales si el Pokémon está debilitado.
      *
-     * @param pokemon   The Pokémon whose information should be updated
-     * @param infoLabel The label for displaying Pokémon name and level
-     * @param hpBar     The progress bar representing Pokémon's HP
-     * @param panel     The panel containing the Pokémon's display elements
+     * @param pokemon   El Pokémon cuya información debe actualizarse
+     * @param infoLabel La etiqueta que muestra el nombre y nivel del Pokémon
+     * @param hpBar     La barra de progreso que representa los puntos de vida del Pokémon
+     * @param panel     El panel que contiene los elementos visuales del Pokémon
      */
+
     private void updatePokemonInfo(Pokemon pokemon, JLabel infoLabel, JProgressBar hpBar, JPanel panel) {
         infoLabel.setText(pokemon.getName() + " Lv." + pokemon.getLevel());
         hpBar.setMaximum(pokemon.getMaxHp());
@@ -335,13 +337,14 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Loads and displays a Pokémon sprite image.
-     * Attempts to find the sprite file in several common formats.
-     * Falls back to text display if image cannot be loaded.
+     * Carga y muestra la imagen del sprite de un Pokémon.
+     * Intenta encontrar el archivo del sprite en varios formatos comunes.
+     * Si no se puede cargar la imagen, muestra el nombre del Pokémon como texto.
      *
-     * @param label       The JLabel where the sprite will be displayed
-     * @param pokemonName The name of the Pokémon (used for filename)
+     * @param label       El JLabel donde se mostrará el sprite
+     * @param pokemonName El nombre del Pokémon (usado para buscar el archivo)
      */
+
     private void loadPokemonSprite(JLabel label, String pokemonName) {
         String basePath = "src/sprites/";
         int spriteWidth = 200;
