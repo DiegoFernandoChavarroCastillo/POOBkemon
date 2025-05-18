@@ -3,8 +3,9 @@ package domain;
 import java.io.Serializable;
 
 /**
- * Class that handles the logic of a Pokémon battle between two trainers.
- * Manages turn flow, action execution, status checks, and weather conditions during battle.
+ * Clase que gestiona la lógica de una batalla Pokémon entre dos entrenadores.
+ * Administra el flujo de turnos, la ejecución de acciones, la verificación de estados
+ * y las condiciones climáticas durante la batalla.
  */
 public class Battle implements Serializable {
     private Trainer player1;
@@ -14,11 +15,12 @@ public class Battle implements Serializable {
     private static String currentClimate = null;
     private static int climateDuration = 0;
     private static final long serialVersionUID = 1L;
+
     /**
-     * Constructs a new battle between two trainers.
+     * Crea una nueva batalla entre dos entrenadores.
      *
-     * @param player1 First trainer in the battle
-     * @param player2 Second trainer in the battle
+     * @param player1 Primer entrenador
+     * @param player2 Segundo entrenador
      */
     public Battle(Trainer player1, Trainer player2) {
         this.player1 = player1;
@@ -28,9 +30,9 @@ public class Battle implements Serializable {
     }
 
     /**
-     * Gets the current battle state.
+     * Obtiene el estado actual de la batalla.
      *
-     * @return BattleState object containing current battle information
+     * @return Un objeto {@code BattleState} con la información de la batalla
      */
     public BattleState getBattleState() {
         return new BattleState(
@@ -45,19 +47,19 @@ public class Battle implements Serializable {
     }
 
     /**
-     * Executes an action performed by the current player.
+     * Ejecuta una acción realizada por el jugador actual.
      *
-     * @param action Action to be performed
-     * @throws IllegalStateException if battle has ended or current player is CPU
+     * @param action Acción a ejecutar
+     * @throws IllegalStateException si la batalla ya terminó o si el jugador actual es una CPU
      */
     public void performAction(Action action) {
         if (battleEnded) {
-            throw new IllegalStateException("Battle has ended");
+            throw new IllegalStateException("La batalla ha terminado");
         }
 
         Trainer current = getCurrentPlayer();
         if (current.isCPU()) {
-            throw new IllegalStateException("Cannot perform manual actions for CPU");
+            throw new IllegalStateException("No se pueden ejecutar acciones manuales para una CPU");
         }
 
         executeAction(current, action);
@@ -65,7 +67,7 @@ public class Battle implements Serializable {
     }
 
     /**
-     * Executes the automatic turn when current player is CPU.
+     * Ejecuta el turno automático si el jugador actual es una CPU.
      */
     public void executeCpuTurn() {
         if (!battleEnded && getCurrentPlayer().isCPU()) {
@@ -77,25 +79,25 @@ public class Battle implements Serializable {
     }
 
     /**
-     * Switches turn to the other player.
+     * Cambia el turno al otro jugador.
      */
     public void changeTurn() {
         this.turn = 3 - this.turn;
     }
 
     /**
-     * Checks if the battle has ended.
+     * Verifica si la batalla ha terminado.
      *
-     * @return true if battle has ended, false otherwise
+     * @return {@code true} si la batalla ha concluido, {@code false} en caso contrario
      */
     public boolean isFinished() {
         return battleEnded;
     }
 
     /**
-     * Gets the winning trainer of the battle.
+     * Obtiene el entrenador ganador de la batalla.
      *
-     * @return Winning trainer or null if battle hasn't ended or is a draw
+     * @return El entrenador ganador o {@code null} si la batalla no ha terminado o hay empate
      */
     public Trainer getWinner() {
         if (!battleEnded) return null;
@@ -109,10 +111,10 @@ public class Battle implements Serializable {
     }
 
     /**
-     * Sets the current weather and its duration.
+     * Establece el clima actual y su duración.
      *
-     * @param climate Name of weather condition to set
-     * @param duration Duration in turns for the weather
+     * @param climate Nombre de la condición climática
+     * @param duration Duración en turnos del clima
      */
     public static void setClimate(String climate, int duration) {
         currentClimate = climate;
@@ -120,59 +122,65 @@ public class Battle implements Serializable {
     }
 
     /**
-     * Gets the current battle weather.
+     * Obtiene el clima actual de la batalla.
      *
-     * @return Current weather name or null if no active weather
+     * @return Nombre del clima actual o {@code null} si no hay clima activo
      */
     public static String getClimate() {
         return currentClimate;
     }
 
     /**
-     * Gets the trainer whose turn it currently is.
+     * Obtiene el entrenador cuyo turno es actualmente.
      *
-     * @return Current trainer
+     * @return Entrenador actual
      */
     public Trainer getCurrentPlayer() {
         return turn == 1 ? player1 : player2;
     }
 
     /**
-     * Gets the opponent of the current player.
+     * Obtiene al oponente del jugador actual.
      *
-     * @return Opponent trainer
+     * @return Entrenador oponente
      */
     public Trainer getOpponent() {
         return turn == 1 ? player2 : player1;
     }
 
     /**
-     * Gets the first trainer in the battle.
+     * Obtiene el primer entrenador de la batalla.
      *
-     * @return First trainer
+     * @return Primer entrenador
      */
     public Trainer getPlayer1() {
         return player1;
     }
 
     /**
-     * Gets the second trainer in the battle.
+     * Obtiene el segundo entrenador de la batalla.
      *
-     * @return Second trainer
+     * @return Segundo entrenador
      */
     public Trainer getPlayer2() {
         return player2;
     }
 
     /**
-     * Gets the current turn number.
+     * Obtiene el número del turno actual.
      *
-     * @return Current turn number (1 or 2)
+     * @return Número de turno (1 o 2)
      */
     public int getTurn() {
         return turn;
     }
 
+    /**
+     * Ejecuta una acción según su tipo: ataque, uso de objeto o cambio de Pokémon.
+     *
+     * @param current Entrenador que realiza la acción
+     * @param action Acción a ejecutar
+     */
     private void executeAction(Trainer current, Action action) {
         switch (action.getType()) {
             case ATTACK:
@@ -187,14 +195,19 @@ public class Battle implements Serializable {
         }
     }
 
+    /**
+     * Procesa acciones posteriores a un turno: verificar desmayos y actualizar clima.
+     */
     private void postAction() {
         checkFaintedPokemon();
         updateClimate();
     }
 
+    /**
+     * Verifica si el Pokémon activo del oponente se ha debilitado y actúa en consecuencia.
+     */
     private void checkFaintedPokemon() {
         Trainer opponent = getOpponent();
-
         Pokemon activeOpponentPokemon = opponent.getActivePokemon();
 
         if (activeOpponentPokemon != null && activeOpponentPokemon.getHp() <= 0) {
@@ -211,6 +224,9 @@ public class Battle implements Serializable {
         }
     }
 
+    /**
+     * Actualiza la duración restante del clima activo y lo elimina si expira.
+     */
     private void updateClimate() {
         if (climateDuration > 0) {
             climateDuration--;

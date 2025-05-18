@@ -3,13 +3,27 @@ package domain;
 import java.util.List;
 
 /**
- * Interfaz que define la estrategia de comportamiento de un entrenador CPU
+ * Interfaz que define la estrategia de comportamiento de un entrenador controlado por la CPU.
+ * Proporciona métodos para decidir acciones durante una batalla, cambiar de Pokémon y usar objetos.
  */
 public interface BattleStrategy {
+
+    /**
+     * Decide la acción que debe realizar el entrenador CPU durante su turno.
+     *
+     * @param trainer Entrenador CPU que realiza la acción
+     * @param battle Contexto actual de la batalla
+     * @return Acción que debe ejecutar el entrenador
+     */
     Action decideAction(CPUTrainer trainer, Battle battle);
 
     /**
-     * Método para seleccionar un Pokémon cuando es necesario cambiar
+     * Selecciona el mejor Pokémon del equipo para hacer un cambio estratégico.
+     * Evalúa la efectividad potencial y la vida restante de cada Pokémon.
+     *
+     * @param trainer Entrenador CPU que realiza el cambio
+     * @param opponentPokemon Pokémon activo del oponente
+     * @return Índice del Pokémon a cambiar, o -1 si no hay opción viable
      */
     default int selectPokemonToSwitch(CPUTrainer trainer, Pokemon opponentPokemon) {
         List<Pokemon> team = trainer.getTeam().getPokemons();
@@ -19,8 +33,7 @@ public interface BattleStrategy {
         for (int i = 0; i < team.size(); i++) {
             Pokemon p = team.get(i);
             if (p.getHp() > 0 && p != trainer.getActivePokemon()) {
-                // Puntaje basado en efectividad y salud
-                double score = calculateEffectiveness(p, opponentPokemon) * (p.getHp() / (double)p.getMaxHp());
+                double score = calculateEffectiveness(p, opponentPokemon) * (p.getHp() / (double) p.getMaxHp());
                 if (score > bestScore) {
                     bestScore = score;
                     bestIndex = i;
@@ -30,30 +43,33 @@ public interface BattleStrategy {
         return bestIndex;
     }
 
+    /**
+     * Evalúa si el entrenador CPU debería usar un objeto en el turno actual.
+     * Intenta revivir Pokémon debilitados o curar al Pokémon activo si es necesario.
+     *
+     * @param trainer Entrenador CPU que podría usar un objeto
+     * @param currentPokemon Pokémon activo del entrenador
+     * @return Acción para usar un objeto, o {@code null} si no se recomienda ningún uso
+     */
     default Action considerUsingItem(CPUTrainer trainer, Pokemon currentPokemon) {
         if (trainer.getItems().isEmpty()) return null;
 
         List<Pokemon> team = trainer.getTeam().getPokemons();
         int currentIndex = team.indexOf(currentPokemon);
 
-        // 1. Revivir SOLO si el Pokémon está debilitado (HP == 0)
         for (int i = 0; i < team.size(); i++) {
             Pokemon p = team.get(i);
-            if (p.getHp() <= 0) {  // Pokémon está debilitado
+            if (p.getHp() <= 0) {
                 for (int j = 0; j < trainer.getItems().size(); j++) {
                     Item item = trainer.getItems().get(j);
                     if (item instanceof Revive) {
-                        // Debug para verificar
-                        System.out.println("[DEBUG] Usando Revive en " + p.getName() + " (HP: " + p.getHp() + ")");
                         return Action.createUseItem(j, i);
                     }
                 }
             }
         }
 
-        // 2. Usar pociones SOLO si el Pokémon tiene vida (HP > 0) pero está herido
         if (currentPokemon.getHp() > 0 && currentPokemon.getHp() < currentPokemon.getMaxHp()) {
-            // Priorizar pociones más fuertes primero
             if (currentPokemon.getHp() < currentPokemon.getMaxHp() * 0.3) {
                 for (int i = 0; i < trainer.getItems().size(); i++) {
                     Item item = trainer.getItems().get(i);
@@ -77,10 +93,14 @@ public interface BattleStrategy {
     }
 
     /**
-     * Calcula la efectividad de un Pokémon contra otro
+     * Calcula la efectividad de un Pokémon atacante contra un defensor.
+     * Este método puede ser sobreescrito con una lógica más precisa según el sistema de tipos.
+     *
+     * @param attacker Pokémon que atacaría
+     * @param defender Pokémon objetivo del ataque
+     * @return Valor de efectividad (por defecto, 1.0)
      */
     default double calculateEffectiveness(Pokemon attacker, Pokemon defender) {
-        // Implementación simplificada - deberías usar tu sistema de tipos real
-        return 1.0; // Valor por defecto, implementa la lógica real según tus tipos
+        return 1.0; // Implementación por defecto
     }
 }

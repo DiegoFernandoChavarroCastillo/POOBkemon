@@ -5,76 +5,76 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Implementation of BattleStrategy that prioritizes offensive moves,
- * selecting attacks that deal maximum damage or reduce the opponent's defense.
- * This strategy considers using items and switching Pokémon when health is critical,
- * but primarily focuses on maximizing damage dealt to the opponent.
- *
+ * Estrategia de batalla que prioriza los movimientos ofensivos,
+ * seleccionando ataques que inflijan el mayor daño posible o reduzcan la defensa del oponente.
+ * Considera el uso de objetos o el cambio de Pokémon si la salud es crítica,
+ * pero su enfoque principal es maximizar el daño causado al rival.
  */
 public class AttackingStrategy implements BattleStrategy, Serializable {
     private Random random = new Random();
     private static final long serialVersionUID = 1L;
+
     /**
-     * Decides the action to perform during a battle turn, prioritizing
-     * offensive moves. Considers using items if beneficial, switching Pokémon
-     * when health is critical, or selecting the highest power move available.
+     * Decide la acción a realizar durante un turno de batalla, priorizando los ataques ofensivos.
+     * Evalúa primero si conviene usar un objeto, luego si es necesario cambiar de Pokémon
+     * por salud crítica, y finalmente elige el movimiento con mayor poder disponible.
      *
-     * @param trainer CPU Trainer using this strategy
-     * @param battle Current battle context
-     * @return Action with the decision made (use item, switch Pokémon, or attack)
+     * @param trainer el entrenador CPU que usa esta estrategia
+     * @param battle el contexto actual de la batalla
+     * @return una instancia de {@code Action} con la decisión tomada
      * @see Action#createSwitchPokemon(int)
      * @see Action#createAttack(int)
      */
     @Override
     public Action decideAction(CPUTrainer trainer, Battle battle) {
-        Pokemon current = trainer.getActivePokemon();
-        Pokemon opponent = battle.getOpponent().getActivePokemon();
+        Pokemon actual = trainer.getActivePokemon();
+        Pokemon oponente = battle.getOpponent().getActivePokemon();
 
-        Action itemAction = considerUsingItem(trainer, current);
-        if (itemAction != null) return itemAction;
+        Action accionObjeto = considerUsingItem(trainer, actual);
+        if (accionObjeto != null) return accionObjeto;
 
-        if (current.getHp() < current.getMaxHp() * 0.2) {
-            int switchIndex = selectPokemonToSwitch(trainer, opponent);
-            if (switchIndex != -1) {
-                return Action.createSwitchPokemon(switchIndex);
+        if (actual.getHp() < actual.getMaxHp() * 0.2) {
+            int indiceCambio = selectPokemonToSwitch(trainer, oponente);
+            if (indiceCambio != -1) {
+                return Action.createSwitchPokemon(indiceCambio);
             }
         }
 
-        List<Move> moves = current.getMoves();
-        Move bestMove = null;
-        int bestPower = 0;
+        List<Move> movimientos = actual.getMoves();
+        Move mejorMovimiento = null;
+        int mayorPoder = 0;
 
-        for (Move move : moves) {
-            if (move.pp() > 0 && move.power() > bestPower) {
-                bestMove = move;
-                bestPower = move.power();
+        for (Move movimiento : movimientos) {
+            if (movimiento.pp() > 0 && movimiento.power() > mayorPoder) {
+                mejorMovimiento = movimiento;
+                mayorPoder = movimiento.power();
             }
         }
 
-        if (bestMove != null) {
-            return Action.createAttack(moves.indexOf(bestMove));
+        if (mejorMovimiento != null) {
+            return Action.createAttack(movimientos.indexOf(mejorMovimiento));
         }
 
-        return getRandomUsableMove(moves);
+        return getRandomUsableMove(movimientos);
     }
 
     /**
-     * Randomly selects a usable move (with remaining PP) from the list.
-     * Makes up to 10 attempts before returning the Struggle move.
+     * Selecciona aleatoriamente un movimiento utilizable (con PP disponibles) desde la lista.
+     * Intenta hasta 10 veces encontrar un movimiento válido antes de retornar el movimiento Forcejeo.
      *
-     * @param moves List of available moves
-     * @return Action with the index of the selected move or -1 (Struggle)
+     * @param moves lista de movimientos disponibles
+     * @return una instancia de {@code Action} con el índice del movimiento elegido o -1 (Forcejeo)
      * @see Move#pp()
      */
     private Action getRandomUsableMove(List<Move> moves) {
-        int attempts = 0;
-        while (attempts < 10) {
-            int index = random.nextInt(moves.size());
-            if (moves.get(index).pp() > 0) {
-                return Action.createAttack(index);
+        int intentos = 0;
+        while (intentos < 10) {
+            int indice = random.nextInt(moves.size());
+            if (moves.get(indice).pp() > 0) {
+                return Action.createAttack(indice);
             }
-            attempts++;
+            intentos++;
         }
-        return Action.createAttack(-1); // Struggle
+        return Action.createAttack(-1);
     }
 }

@@ -4,16 +4,27 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Representa un efecto aplicado por un movimiento.
+ * Representa un efecto aplicado por un movimiento durante la batalla. Los efectos pueden
+ * incluir cambios de estadísticas, cambios de clima, aplicación de estados, restricciones,
+ * creación de sustitutos, entre otros.
  */
 public class Effect implements Serializable {
-    private final String type; // statChange, status, climate, restriction, etc.
-    private final String target; // self, opponent, field
-    private final Map<String, Integer> statChanges; // Ej: {"attack": 1, "defense": -2}
-    private final String status; // Ej: toxic, taunt, encore, etc.
-    private final int duration; // en turnos, si aplica
+    private final String type;
+    private final String target;
+    private final Map<String, Integer> statChanges;
+    private final String status;
+    private final int duration;
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Crea un nuevo efecto con sus propiedades específicas.
+     *
+     * @param type Tipo de efecto (por ejemplo: statChange, status, climate, etc.)
+     * @param target Objetivo del efecto (self, opponent, field)
+     * @param statChanges Cambios de estadísticas si aplica, puede ser null
+     * @param status Estado o valor asociado (por ejemplo: "toxic", "sunny", etc.)
+     * @param duration Duración del efecto en turnos, si aplica
+     */
     public Effect(String type, String target, Map<String, Integer> statChanges, String status, int duration) {
         this.type = type.toLowerCase();
         this.target = target.toLowerCase();
@@ -22,6 +33,12 @@ public class Effect implements Serializable {
         this.duration = duration;
     }
 
+    /**
+     * Aplica el efecto al objetivo correspondiente, en función del tipo y objetivo definidos.
+     *
+     * @param user Pokémon que utiliza el movimiento
+     * @param opponent Pokémon oponente
+     */
     public void apply(Pokemon user, Pokemon opponent) {
         Pokemon targetPokemon = switch (target) {
             case "self" -> user;
@@ -53,27 +70,52 @@ public class Effect implements Serializable {
             case "substitute" -> targetPokemon.createSubstitute();
             case "restriction" -> targetPokemon.applyRestriction(status, duration);
             default -> {
+
             }
         }
     }
 
-
+    /**
+     * Devuelve el tipo del efecto.
+     *
+     * @return Tipo del efecto
+     */
     public String getType() {
         return type;
     }
 
+    /**
+     * Devuelve el objetivo del efecto.
+     *
+     * @return Objetivo del efecto (self, opponent, etc.)
+     */
     public String getTarget() {
         return target;
     }
 
+    /**
+     * Devuelve el mapa de cambios de estadísticas, si aplica.
+     *
+     * @return Mapa de cambios de estadísticas
+     */
     public Map<String, Integer> getStatChanges() {
         return statChanges;
     }
 
+    /**
+     * Devuelve el estado o condición que representa el efecto.
+     *
+     * @return Estado o condición (por ejemplo: "paralysis", "rain", etc.)
+     */
     public String getStatus() {
         return status;
     }
 
+    /**
+     * Devuelve la duración del efecto en turnos.
+     *
+     * @return Duración en turnos
+     */
     public int getDuration() {
         return duration;
     }

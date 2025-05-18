@@ -3,19 +3,21 @@ package domain;
 import java.io.Serializable;
 
 /**
- * Class representing an action a player can perform during battle.
- * Actions can be of three types: attack, use item, or switch Pokémon.
+ * Representa una acción que un jugador puede realizar durante una batalla.
+ * Una acción puede ser de tipo ATAQUE, USAR_OBJETO o CAMBIAR_POKEMON.
+ * Esta clase utiliza métodos de fábrica estáticos para asegurar la creación válida de acciones.
  */
 public class Action implements Serializable {
+
     /**
-     * Enum representing the different types of actions available.
+     * Enumera los tipos de acciones que se pueden realizar en batalla.
      */
     public enum Type {
-        /** Represents an attack using a move */
+        /** Acción para realizar un ataque usando un movimiento. */
         ATTACK,
-        /** Represents using an item */
+        /** Acción para usar un objeto en un Pokémon. */
         USE_ITEM,
-        /** Represents switching Pokémon */
+        /** Acción para cambiar el Pokémon activo. */
         SWITCH_POKEMON
     }
 
@@ -26,41 +28,42 @@ public class Action implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Private constructor to enforce factory method usage.
-     * @param type The type of action
+     * Constructor privado para forzar el uso de métodos de fábrica.
+     *
+     * @param type el tipo de acción
      */
     private Action(Type type) {
         this.type = type;
     }
 
     /**
-     * Creates an ATTACK type action.
-     * @param moveIndex Index of the move to use (-1 represents Struggle)
-     * @return Configured attack action
-     * @throws IllegalArgumentException if moveIndex is invalid
+     * Crea una acción de tipo ATAQUE.
+     *
+     * @param moveIndex el índice del movimiento a usar (-1 representa Forcejeo)
+     * @return una instancia de {@code Action} de tipo {@code ATTACK}
+     * @throws IllegalArgumentException si {@code moveIndex} es menor que -1
      */
     public static Action createAttack(int moveIndex) {
         if (moveIndex < -1) {
-            throw new IllegalArgumentException("Invalid move index");
+            throw new IllegalArgumentException("Índice de movimiento inválido");
         }
-
         Action action = new Action(Type.ATTACK);
         action.moveIndex = moveIndex;
         return action;
     }
 
     /**
-     * Creates a USE ITEM type action.
-     * @param itemIndex Index of the item to use
-     * @param targetIndex Index of the target Pokémon
-     * @return Configured use item action
-     * @throws IllegalArgumentException if indices are invalid
+     * Crea una acción para usar un objeto sobre un Pokémon.
+     *
+     * @param itemIndex el índice del objeto a usar
+     * @param targetIndex el índice del Pokémon objetivo
+     * @return una instancia de {@code Action} de tipo {@code USE_ITEM}
+     * @throws IllegalArgumentException si {@code itemIndex} o {@code targetIndex} son negativos
      */
     public static Action createUseItem(int itemIndex, int targetIndex) {
         if (itemIndex < 0 || targetIndex < 0) {
-            throw new IllegalArgumentException("Invalid indices");
+            throw new IllegalArgumentException("Índices inválidos");
         }
-
         Action action = new Action(Type.USE_ITEM);
         action.itemIndex = itemIndex;
         action.targetIndex = targetIndex;
@@ -68,80 +71,85 @@ public class Action implements Serializable {
     }
 
     /**
-     * Creates a SWITCH POKÉMON type action.
-     * @param targetIndex Index of the Pokémon to switch to
-     * @return Configured switch action
-     * @throws IllegalArgumentException if targetIndex is invalid
+     * Crea una acción para cambiar de Pokémon.
+     *
+     * @param targetIndex el índice del Pokémon al que se desea cambiar
+     * @return una instancia de {@code Action} de tipo {@code SWITCH_POKEMON}
+     * @throws IllegalArgumentException si {@code targetIndex} es negativo
      */
     public static Action createSwitchPokemon(int targetIndex) {
         if (targetIndex < 0) {
-            throw new IllegalArgumentException("Invalid Pokémon index");
+            throw new IllegalArgumentException("Índice de Pokémon inválido");
         }
-
         Action action = new Action(Type.SWITCH_POKEMON);
         action.targetIndex = targetIndex;
         return action;
     }
 
     /**
-     * Gets the type of this action.
-     * @return The action type
+     * Devuelve el tipo de esta acción.
+     *
+     * @return el tipo de acción
      */
     public Type getType() {
         return type;
     }
 
     /**
-     * Gets the move index for ATTACK actions.
-     * @return The move index
-     * @throws IllegalStateException if action is not ATTACK type
+     * Devuelve el índice del movimiento en acciones de tipo ATAQUE.
+     *
+     * @return el índice del movimiento
+     * @throws IllegalStateException si la acción no es de tipo {@code ATTACK}
      */
     public int getMoveIndex() {
         if (type != Type.ATTACK) {
-            throw new IllegalStateException("This action is not ATTACK type");
+            throw new IllegalStateException("Esta acción no es de tipo ATTACK");
         }
         return moveIndex;
     }
 
     /**
-     * Gets the item index for USE ITEM actions.
-     * @return The item index
-     * @throws IllegalStateException if action is not USE ITEM type
+     * Devuelve el índice del objeto en acciones de tipo USAR_OBJETO.
+     *
+     * @return el índice del objeto
+     * @throws IllegalStateException si la acción no es de tipo {@code USE_ITEM}
      */
     public int getItemIndex() {
         if (type != Type.USE_ITEM) {
-            throw new IllegalStateException("This action is not USE_ITEM type");
+            throw new IllegalStateException("Esta acción no es de tipo USE_ITEM");
         }
         return itemIndex;
     }
 
     /**
-     * Gets the target index for USE ITEM or SWITCH POKÉMON actions.
-     * @return The target index
-     * @throws IllegalStateException if action is ATTACK type
+     * Devuelve el índice del objetivo en acciones de tipo USAR_OBJETO o CAMBIAR_POKEMON.
+     *
+     * @return el índice del objetivo
+     * @throws IllegalStateException si la acción es de tipo {@code ATTACK}
      */
     public int getTargetIndex() {
         if (type == Type.ATTACK) {
-            throw new IllegalStateException("ATTACK actions don't have targetIndex");
+            throw new IllegalStateException("Las acciones de tipo ATTACK no tienen índice de objetivo");
         }
         return targetIndex;
     }
 
     /**
-     * Returns a string representation of the action.
-     * @return String describing the action
+     * Devuelve una representación en forma de cadena de esta acción.
+     *
+     * @return una cadena describiendo la acción
      */
     @Override
     public String toString() {
         switch (type) {
             case ATTACK:
-                return String.format("Action [ATTACK, move=%d]", moveIndex);
+                return String.format("Acción [ATTACK, movimiento=%d]", moveIndex);
             case USE_ITEM:
-                return String.format("Action [USE_ITEM, item=%d, target=%d]", itemIndex, targetIndex);
+                return String.format("Acción [USE_ITEM, objeto=%d, objetivo=%d]", itemIndex, targetIndex);
             case SWITCH_POKEMON:
-                return String.format("Action [SWITCH_POKEMON, target=%d]", targetIndex);
+                return String.format("Acción [SWITCH_POKEMON, objetivo=%d]", targetIndex);
             default:
-                return "Action [UNKNOWN_TYPE]";
+                return String.format("Acción [TIPO_DESCONOCIDO: %s]", type);
         }
     }
 }
