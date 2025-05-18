@@ -7,10 +7,9 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
-
 /**
- * A dialog for selecting items to be used by a trainer in the game.
- * Allows the trainer to choose up to a maximum number of items from available options.
+ * Diálogo para seleccionar ítems que usará un entrenador en el juego.
+ * Permite al entrenador elegir hasta un número máximo de ítems entre las opciones disponibles.
  */
 public class ItemSelectionGUI extends JDialog {
     private Trainer trainer;
@@ -19,12 +18,11 @@ public class ItemSelectionGUI extends JDialog {
     private List<Item> selectedItems = new ArrayList<>();
     private int maxItems = 3;
 
-
     /**
-     * Constructs an ItemSelectionGUI dialog.
+     * Construye el diálogo ItemSelectionGUI.
      *
-     * @param parent  the parent frame of this dialog
-     * @param trainer the trainer who will receive the selected items
+     * @param parent  la ventana principal (padre) del diálogo
+     * @param trainer el entrenador que recibirá los ítems seleccionados
      */
     public ItemSelectionGUI(JFrame parent, Trainer trainer) {
         super(parent, "Seleccionar Ítems para " + trainer.getName(), true);
@@ -34,14 +32,16 @@ public class ItemSelectionGUI extends JDialog {
         setupUI();
     }
 
+    /**
+     * Configura la interfaz gráfica del diálogo.
+     * Establece el diseño, los botones y las áreas de selección.
+     */
     private void setupUI() {
         setLayout(new BorderLayout(10, 10));
-
 
         itemsPanel = new JPanel(new GridLayout(0, 1, 10, 10));
         JScrollPane scrollPane = new JScrollPane(itemsPanel);
         add(scrollPane, BorderLayout.CENTER);
-
 
         JPanel bottomPanel = new JPanel();
         confirmButton = new JButton("Confirmar (" + selectedItems.size() + "/" + maxItems + ")");
@@ -58,8 +58,11 @@ public class ItemSelectionGUI extends JDialog {
         loadAvailableItems();
     }
 
+    /**
+     * Carga los ítems disponibles que el jugador puede seleccionar.
+     * Los ítems se representan como botones.
+     */
     private void loadAvailableItems() {
-
         Item[] availableItems = {
                 new Potion(),
                 new SuperPotion(),
@@ -74,6 +77,12 @@ public class ItemSelectionGUI extends JDialog {
         }
     }
 
+    /**
+     * Añade o elimina un ítem de la selección actual según su estado.
+     *
+     * @param item   el ítem que se desea seleccionar o deseleccionar
+     * @param button el botón que representa el ítem
+     */
     private void toggleItemSelection(Item item, JButton button) {
         if (selectedItems.contains(item)) {
             selectedItems.remove(item);
@@ -85,23 +94,28 @@ public class ItemSelectionGUI extends JDialog {
         updateConfirmButton();
     }
 
+    /**
+     * Actualiza el texto y el estado del botón de confirmación según la selección actual.
+     */
     private void updateConfirmButton() {
         confirmButton.setText("Confirmar (" + selectedItems.size() + "/" + maxItems + ")");
         confirmButton.setEnabled(selectedItems.size() > 0);
     }
 
+    /**
+     * Confirma la selección de ítems, los asigna al entrenador y cierra el diálogo.
+     */
     private void confirmSelection() {
         trainer.getItems().clear();
         trainer.getItems().addAll(selectedItems);
         dispose();
     }
 
-
     /**
-     * Displays the item selection dialog.
+     * Muestra el diálogo para seleccionar ítems.
      *
-     * @param parent   the parent component
-     * @param trainer  the trainer who will receive the selected items
+     * @param parent  el componente padre desde el cual se muestra el diálogo
+     * @param trainer el entrenador que recibirá los ítems seleccionados
      */
     public static void showItemSelection(Component parent, Trainer trainer) {
         ItemSelectionGUI dialog = new ItemSelectionGUI(

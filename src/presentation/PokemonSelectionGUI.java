@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A dialog for selecting Pokémon for a trainer's team. Allows selection of up to
- * a specified maximum number of Pokémon from available options.
+ * Diálogo para seleccionar Pokémon que formarán parte del equipo de un entrenador.
+ * Permite seleccionar hasta un número máximo especificado de Pokémon desde la base de datos disponible.
  */
 public class PokemonSelectionGUI extends JDialog {
     private List<Pokemon> selectedPokemons;
@@ -20,12 +20,12 @@ public class PokemonSelectionGUI extends JDialog {
     private MoveSelectionCallback moveSelectionCallback;
 
     /**
-     * Constructs a PokemonSelectionGUI dialog.
+     * Construye el diálogo PokemonSelectionGUI.
      *
-     * @param parent              the parent frame of this dialog
-     * @param trainer             the trainer who will receive the selected Pokémon
-     * @param maxPokemons         the maximum number of Pokémon that can be selected
-     * @param callback            callback to handle Pokémon selection confirmation
+     * @param parent       la ventana principal (padre) del diálogo
+     * @param trainer      el entrenador que recibirá los Pokémon seleccionados
+     * @param maxPokemons  el número máximo de Pokémon que se pueden seleccionar
+     * @param callback     callback que maneja la confirmación de la selección
      */
     public PokemonSelectionGUI(JFrame parent, Trainer trainer, int maxPokemons, MoveSelectionCallback callback) {
         super(parent, "Seleccionar Pokémon", true);
@@ -39,14 +39,16 @@ public class PokemonSelectionGUI extends JDialog {
         setLocationRelativeTo(parent);
     }
 
+    /**
+     * Configura los componentes de la interfaz gráfica del diálogo.
+     * Incluye una grilla con todos los Pokémon disponibles y el botón de confirmación.
+     */
     private void setupUI() {
         setLayout(new BorderLayout());
-
 
         pokemonGrid = new JPanel(new GridLayout(0, 4, 10, 10));
         pokemonGrid.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Cargar todos los Pokémon disponibles
         for (String name : PokemonDataBase.getAvailablePokemonNames()) {
             Pokemon pokemon = PokemonDataBase.getPokemon(name);
             JPanel pokemonPanel = createPokemonPanel(pokemon);
@@ -56,13 +58,11 @@ public class PokemonSelectionGUI extends JDialog {
         JScrollPane scrollPane = new JScrollPane(pokemonGrid);
         add(scrollPane, BorderLayout.CENTER);
 
-
         JPanel bottomPanel = new JPanel();
         confirmButton = new JButton("Confirmar (" + selectedPokemons.size() + "/" + maxPokemons + ")");
         confirmButton.setEnabled(false);
         confirmButton.addActionListener(e -> {
-            if (selectedPokemons.size() > 0) {
-                // Usar el método correcto para añadir Pokémon al equipo
+            if (!selectedPokemons.isEmpty()) {
                 for (Pokemon pokemon : selectedPokemons) {
                     trainer.addPokemonToTeam(pokemon);
                 }
@@ -74,6 +74,13 @@ public class PokemonSelectionGUI extends JDialog {
         add(bottomPanel, BorderLayout.SOUTH);
     }
 
+    /**
+     * Crea el panel visual para un Pokémon, con su imagen y nombre.
+     * Permite seleccionar o deseleccionar Pokémon con clic izquierdo/derecho.
+     *
+     * @param pokemon el Pokémon a representar gráficamente
+     * @return un panel listo para ser agregado a la grilla
+     */
     private JPanel createPokemonPanel(Pokemon pokemon) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
@@ -94,14 +101,12 @@ public class PokemonSelectionGUI extends JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    // Clic izquierdo: seleccionar (si hay espacio)
                     if (selectedPokemons.size() < maxPokemons) {
                         Pokemon clonedPokemon = pokemon.clone();
                         selectedPokemons.add(clonedPokemon);
                         panel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 2));
                     }
                 } else if (SwingUtilities.isRightMouseButton(e)) {
-                    // Clic derecho: deseleccionar (si existe en la lista)
                     Pokemon toRemove = null;
                     for (Pokemon p : selectedPokemons) {
                         if (p.getName().equals(pokemon.getName())) {
@@ -116,14 +121,22 @@ public class PokemonSelectionGUI extends JDialog {
                 }
 
                 confirmButton.setText("Confirmar (" + selectedPokemons.size() + "/" + maxPokemons + ")");
-                confirmButton.setEnabled(selectedPokemons.size() > 0);
+                confirmButton.setEnabled(!selectedPokemons.isEmpty());
             }
         });
 
         return panel;
     }
 
+    /**
+     * Interfaz funcional para manejar la acción posterior a la selección de Pokémon.
+     */
     public interface MoveSelectionCallback {
+        /**
+         * Se ejecuta cuando el usuario ha confirmado la selección de Pokémon.
+         *
+         * @param pokemons la lista de Pokémon seleccionados
+         */
         void onPokemonSelected(List<Pokemon> pokemons);
     }
 }

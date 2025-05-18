@@ -370,9 +370,10 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Prepares and initializes all UI components for the battle window.
-     * Creates the layout structure and adds all necessary elements.
+     * Prepara e inicializa todos los componentes de la interfaz para la ventana de batalla.
+     * Crea la estructura del diseño y añade todos los elementos necesarios.
      */
+
     private void prepareElements() {
         panelSuperior = new JPanel(new GridLayout(1, 2));
         panelSuperior.setBackground(new Color(194, 255, 82));
@@ -464,18 +465,20 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Updates the turn timer display with the remaining time.
+     * Actualiza la visualización del temporizador de turno con el tiempo restante.
      *
-     * @param secondsLeft The number of seconds remaining in the current turn
+     * @param secondsLeft La cantidad de segundos restantes en el turno actual
      */
+
     public void updateTurnTimer(int secondsLeft) {
         turnTimerLabel.setText("Tiempo restante: " + secondsLeft + "s");
     }
 
     /**
-     * Sets up action listeners for all interactive buttons in the battle UI.
-     * Connects button clicks to controller methods.
+     * Configura los escuchadores de eventos para todos los botones interactivos en la interfaz de batalla.
+     * Conecta los clics de los botones con los métodos del controlador.
      */
+
     private void prepareListeners() {
         btnAtacar.addActionListener(e -> controller.showAttackOptions());
 
@@ -487,10 +490,10 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Displays attack options for the current Pokémon.
-     * Creates buttons for each available move and handles their selection.
+     * Muestra las opciones de ataque disponibles para el Pokémon actual.
+     * Crea botones para cada movimiento disponible y gestiona su selección.
      *
-     * @param moves A list of moves available to the current Pokémon
+     * @param moves Una lista de movimientos disponibles para el Pokémon actual
      */
     public void showAttackOptions(List<Move> moves) {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
@@ -528,19 +531,20 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Sets the game controller for this GUI.
-     * Establishes the connection between view and controller.
+     * Establece el controlador del juego para esta interfaz gráfica.
+     * Establece la conexión entre la vista y el controlador.
      *
-     * @param controller The GameController instance to use
+     * @param controller La instancia de GameController que se va a utilizar
      */
+
     public void setController(GameController controller) {
         this.controller = controller;
     }
 
     /**
-     * Displays a description of the selected game mode in a dialog window.
+     * Muestra una descripción del modo de juego seleccionado en una ventana de diálogo.
      *
-     * @param message The description text to display
+     * @param message El texto descriptivo que se va a mostrar
      */
     private void showModeDescription(String message) {
         JOptionPane.showMessageDialog(this,
@@ -550,9 +554,9 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Shows the battle end message and exits the application.
+     * Muestra el mensaje de finalización de la batalla y cierra la aplicación.
      *
-     * @param message The result message to display
+     * @param message El mensaje con el resultado que se va a mostrar
      */
     public void showBattleEnd(String message) {
         JOptionPane.showMessageDialog(this, message);
@@ -560,16 +564,16 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * Checks if the attack panel is currently visible.
+     * Verifica si el panel de ataque está actualmente visible.
      *
-     * @return true if the attack panel is visible, false otherwise
+     * @return true si el panel de ataque está visible, false en caso contrario
      */
     public boolean isAttackPanelVisible() {
         return ((JPanel)panelOpciones.getComponent(1)).getComponentCount() > 0;
     }
 
     /**
-     * Shows the main options panel by switching the card layout.
+     * Muestra el panel de opciones principales cambiando el diseño con el CardLayout.
      */
     public void showMainOptions() {
         cardLayout.show(panelOpciones, "main");
@@ -620,10 +624,10 @@ public class BattleGUI extends JFrame {
     }
 
     /**
-     * The main method to launch the application.
-     * Creates a GUI instance and muestra primero la selección de modo.
+     * Método principal para iniciar la aplicación.
+     * Crea una instancia de la interfaz gráfica y muestra primero la pantalla de selección de modo.
      *
-     * @param args Command line arguments (not used)
+     * @param args Argumentos de línea de comandos (no se utilizan)
      */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
