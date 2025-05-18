@@ -1,13 +1,15 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
 
 /**
  * Estrategia defensiva: prioriza movimientos que mejoran defensa o reducen ataque del oponente
  */
-public class DefensiveStrategy implements BattleStrategy {
+public class DefensiveStrategy implements BattleStrategy, Serializable {
     private Random random = new Random();
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Action decideAction(CPUTrainer trainer, Battle battle) {

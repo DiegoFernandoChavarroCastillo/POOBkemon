@@ -1,11 +1,13 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Estrategia experta: combina diferentes enfoques según la situación
  */
-public class ExpertStrategy implements BattleStrategy {
+public class ExpertStrategy implements BattleStrategy, Serializable {
+    private static final long serialVersionUID = 1L;
     @Override
     public Action decideAction(CPUTrainer trainer, Battle battle) {
         Pokemon current = trainer.getActivePokemon();

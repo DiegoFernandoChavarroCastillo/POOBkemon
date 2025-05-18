@@ -1,9 +1,11 @@
 package domain;
 
+import java.io.Serializable;
+
 /**
  * Clase que representa el estado actual de la batalla para la UI
  */
-public class BattleState {
+public class BattleState implements Serializable {
     private final String player1Name;
     private final String player2Name;
     private final Pokemon player1Pokemon;
@@ -11,6 +13,7 @@ public class BattleState {
     private final boolean isPlayer1Turn;
     private final boolean isHumanTurn;
     private final String climate;
+    private static final long serialVersionUID = 1L;
 
     public BattleState(String player1Name, String player2Name,
                        Pokemon player1Pokemon, Pokemon player2Pokemon,

@@ -1,17 +1,19 @@
 package domain;
 
+import java.io.Serializable;
+
 /**
  * Class that handles the logic of a Pokémon battle between two trainers.
  * Manages turn flow, action execution, status checks, and weather conditions during battle.
  */
-public class Battle {
+public class Battle implements Serializable {
     private Trainer player1;
     private Trainer player2;
     private int turn;
     private boolean battleEnded;
     private static String currentClimate = null;
     private static int climateDuration = 0;
-
+    private static final long serialVersionUID = 1L;
     /**
      * Constructs a new battle between two trainers.
      *

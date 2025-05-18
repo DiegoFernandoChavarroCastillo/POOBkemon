@@ -1,12 +1,13 @@
 package domain;
 
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Pokemon implements Cloneable {
+public class Pokemon implements Cloneable, Serializable {
     private String name;
     private String type;
     private int hp;
@@ -24,6 +25,7 @@ public class Pokemon implements Cloneable {
     private String status; // Ej: "toxic", "paralysis", etc.
     private boolean hasSubstitute = false;
     private int maxHp;
+    private static final long serialVersionUID = 1L;
 
     // Boosts temporales de batalla, ej: +1 ataque, -2 defensa, etc.
     private Map<String, Integer> statBoosts = new HashMap<>();

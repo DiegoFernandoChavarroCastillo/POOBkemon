@@ -1,10 +1,11 @@
     package domain;
 
+    import java.io.Serializable;
     import java.util.*;
 
-    public class MoveDatabase {
+    public class MoveDatabase implements Serializable {
         private static final Map<String, Move> moves = new HashMap<>();
-
+        private static final long serialVersionUID = 1L;
         static {
             moves.put("BODY SLAM", new PhysicalMove("BODY SLAM", "NORMAL", 85, 100, 15, 0));
             moves.put("HYPER BEAM", new PhysicalMove("HYPER BEAM", "NORMAL", 150, 90, 5, 0));

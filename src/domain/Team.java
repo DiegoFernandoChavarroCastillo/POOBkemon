@@ -1,5 +1,6 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,10 +8,11 @@ import java.util.List;
 /**
  * Representa el equipo de un entrenador, conformado por hasta 6 Pokémon.
  */
-public class Team {
+public class Team implements Serializable {
     private List<Pokemon> pokemons;
     private Pokemon activePokemon;
     private int indexActive;
+    private static final long serialVersionUID = 1L;
 
     public Team() {
         pokemons = new ArrayList<>();

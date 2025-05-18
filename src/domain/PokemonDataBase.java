@@ -1,10 +1,11 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class PokemonDataBase {
+public class PokemonDataBase implements Serializable {
     private static Map<String, Pokemon> pokemons = new HashMap<>();
-
+    private static final long serialVersionUID = 1L;
     static {
         loadInitialPokemons();
     }

@@ -1,16 +1,18 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * Representa un efecto aplicado por un movimiento.
  */
-public class Effect {
+public class Effect implements Serializable {
     private final String type; // statChange, status, climate, restriction, etc.
     private final String target; // self, opponent, field
     private final Map<String, Integer> statChanges; // Ej: {"attack": 1, "defense": -2}
     private final String status; // Ej: toxic, taunt, encore, etc.
     private final int duration; // en turnos, si aplica
+    private static final long serialVersionUID = 1L;
 
     public Effect(String type, String target, Map<String, Integer> statChanges, String status, int duration) {
         this.type = type.toLowerCase();

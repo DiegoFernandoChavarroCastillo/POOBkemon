@@ -1,5 +1,6 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
 
@@ -10,9 +11,9 @@ import java.util.Random;
  * but primarily focuses on maximizing damage dealt to the opponent.
  *
  */
-public class AttackingStrategy implements BattleStrategy {
+public class AttackingStrategy implements BattleStrategy, Serializable {
     private Random random = new Random();
-
+    private static final long serialVersionUID = 1L;
     /**
      * Decides the action to perform during a battle turn, prioritizing
      * offensive moves. Considers using items if beneficial, switching Pokémon

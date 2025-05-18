@@ -18,7 +18,7 @@ public class GameController {
     private int remainingSeconds;
     public static final int MODO_NORMAL = 0;
     public static final int MODO_SUPERVIVENCIA = 1;
-
+    private static final long serialVersionUID = 1L;
 
     public GameController(BattleGUI gui) {
         this.gui = gui;
@@ -489,4 +489,9 @@ public class GameController {
             trainer.addPokemonToTeam(random);
         }
     }
+    public void loadGameState(GameState gameState) {
+        this.currentBattle = gameState.getBattle();
+        this.gui.setGameMode(gameState.getGameMode());
+    }
+
 }

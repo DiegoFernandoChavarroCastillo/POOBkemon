@@ -1,10 +1,12 @@
 package domain;
 
+import java.io.Serializable;
+
 /**
  * Class representing an action a player can perform during battle.
  * Actions can be of three types: attack, use item, or switch Pokémon.
  */
-public class Action {
+public class Action implements Serializable {
     /**
      * Enum representing the different types of actions available.
      */
@@ -21,6 +23,7 @@ public class Action {
     private int moveIndex;
     private int itemIndex;
     private int targetIndex;
+    private static final long serialVersionUID = 1L;
 
     /**
      * Private constructor to enforce factory method usage.

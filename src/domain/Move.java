@@ -1,9 +1,11 @@
 package domain;
 
+import java.io.Serializable;
+
 /**
  * Representa un movimiento que un Pokémon puede usar.
  */
-public abstract class Move implements Cloneable {
+public abstract class Move implements Cloneable, Serializable {
     public abstract String name();
     public abstract String type();
     public abstract int power();

@@ -1,10 +1,12 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TypeChart {
+public class TypeChart implements Serializable {
     private static final Map<String, Map<String, Double>> chart = new HashMap<>();
+    private static final long serialVersionUID = 1L;
 
     static {
         // ACERO

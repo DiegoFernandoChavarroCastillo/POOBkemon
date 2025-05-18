@@ -1,10 +1,12 @@
 package domain;
 
-public class Potion extends Item {
+import java.io.Serializable;
+
+public class Potion extends Item implements Serializable {
     public Potion() {
         super("Potion", false, 20);
     }
-
+    private static final long serialVersionUID = 1L;
 
     @Override
     public void use(Pokemon pokemon) {

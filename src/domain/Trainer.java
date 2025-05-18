@@ -1,18 +1,20 @@
 package domain;
 
 import javax.swing.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Representa a un entrenador de Pokémon, puede ser humano o CPU.
  */
-public class Trainer {
+public class Trainer implements Serializable {
     protected String name;
     protected String color;
     protected List<Item> items;
     protected Team team;
     protected boolean isCPU;
+    private static final long serialVersionUID = 1L;
 
     public Trainer(String name, String color) {
         this.name = name;

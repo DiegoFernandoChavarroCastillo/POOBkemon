@@ -1,10 +1,12 @@
 package domain;
 
-public class Revive extends Item {
+import java.io.Serializable;
+
+public class Revive extends Item implements Serializable {
     public Revive() {
         super("Revive", true, 0);
     }
-
+    private static final long serialVersionUID = 1L;
 
     @Override
     public void use(Pokemon pokemon) {

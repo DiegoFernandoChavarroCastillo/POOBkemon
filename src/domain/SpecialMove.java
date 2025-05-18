@@ -1,11 +1,12 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.Random;
 
 /**
  * Movimiento de tipo especial.
  */
-public class SpecialMove extends Move {
+public class SpecialMove extends Move implements Serializable {
     private final String name;
     private final String type;
     private final int power;
@@ -13,6 +14,7 @@ public class SpecialMove extends Move {
     private final int maxPP;
     private final int priority;
     private int currentPP;
+    private static final long serialVersionUID = 1L;
 
     public SpecialMove(String name, String type, int power, int precision, int maxPP, int priority) {
         this.name = name;

@@ -40,12 +40,96 @@ public class BattleGUI extends JFrame {
         setSize(500, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        prepareMenuBar(); // Nueva barra de menú
         prepareMenu();
         setVisible(true);
-        controller = new GameController(this); // <- inicializa controller correctamente
+        controller = new GameController(this);
         setController(controller);
-
     }
+
+    /**
+     * Prepara la barra de menú con las opciones de Archivo (Guardar/Cargar)
+     */
+    private void prepareMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        // Menú Archivo
+        JMenu fileMenu = new JMenu("Archivo");
+
+        JMenuItem saveItem = new JMenuItem("Guardar partida");
+        saveItem.addActionListener(e -> saveGame());
+
+        JMenuItem loadItem = new JMenuItem("Cargar partida");
+        loadItem.addActionListener(e -> loadGame());
+
+        fileMenu.add(saveItem);
+        fileMenu.add(loadItem);
+        menuBar.add(fileMenu);
+
+        setJMenuBar(menuBar);
+    }
+
+    /**
+     * Maneja el guardado de la partida actual
+     */
+    private void saveGame() {
+        if (controller.getCurrentBattle() == null) {
+            JOptionPane.showMessageDialog(this, "No hay partida en curso para guardar");
+            return;
+        }
+
+        String filename = JOptionPane.showInputDialog(this, "Nombre para guardar la partida:");
+        if (filename != null && !filename.trim().isEmpty()) {
+            boolean success = PersistenceManager.saveGame(
+                    new GameState(
+                            controller.getCurrentBattle(),
+                            gameMode,
+                            controller.getCurrentBattle().getPlayer1().getName(),
+                            controller.getCurrentBattle().getPlayer2().getName()
+                    ),
+                    filename
+            );
+
+            if (success) {
+                JOptionPane.showMessageDialog(this, "Partida guardada exitosamente");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al guardar la partida", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    /**
+     * Maneja la carga de una partida guardada
+     */
+    private void loadGame() {
+        List<String> savedGames = PersistenceManager.getSavedGames();
+        if (savedGames.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No hay partidas guardadas");
+            return;
+        }
+
+        String selected = (String) JOptionPane.showInputDialog(
+                this,
+                "Selecciona una partida para cargar:",
+                "Cargar partida",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                savedGames.toArray(),
+                savedGames.get(0));
+
+        if (selected != null) {
+            GameState gameState = PersistenceManager.loadGame(selected);
+            if (gameState != null) {
+                controller.loadGameState(gameState);
+                this.gameMode = gameState.getGameMode();
+                setupBattleWindow();
+                updateBattleInfo(gameState.getBattle().getBattleState());
+                JOptionPane.showMessageDialog(this, "Partida cargada exitosamente");
+            }
+        }
+    }
+
+    // Todos los demás métodos existentes se mantienen exactamente igual...
 
     /**
      * Prepares the main menu interface with game mode selection buttons.
@@ -54,7 +138,6 @@ public class BattleGUI extends JFrame {
     private void prepareMenu() {
         JPanel menuPanel = new JPanel(new BorderLayout());
         menuPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
 
         JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         try {
@@ -70,10 +153,8 @@ public class BattleGUI extends JFrame {
             logoPanel.add(titleLabel);
         }
 
-
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 10, 10));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
-
 
         JButton pvpButton = createModeButton("Jugador vs Jugador (PvP)",
                 new Color(100, 150, 255),
@@ -83,7 +164,6 @@ public class BattleGUI extends JFrame {
                         "- 6 Pokémon\n" +
                         "- Movimientos para cada Pokémon\n" +
                         "- Ítems para usar en batalla");
-
 
         JButton pvmButton = createModeButton("Jugador vs Máquina (PvM)",
                 new Color(100, 200, 100),
@@ -104,7 +184,6 @@ public class BattleGUI extends JFrame {
                         "- 6 Pokémon y sus movimientos\n" +
                         "- Ítems disponibles");
 
-
         pvpButton.addActionListener(e -> controller.showPlayerSetup(1));
         pvmButton.addActionListener(e -> controller.showPlayerSetup(2));
         mvmButton.addActionListener(e -> controller.showPlayerSetup(3));
@@ -112,7 +191,6 @@ public class BattleGUI extends JFrame {
         buttonPanel.add(pvpButton);
         buttonPanel.add(pvmButton);
         buttonPanel.add(mvmButton);
-
 
         JPanel infoPanel = new JPanel();
         infoPanel.setBackground(new Color(240, 240, 240));
@@ -125,7 +203,6 @@ public class BattleGUI extends JFrame {
                 "<br>" +
                 "</div></html>");
         infoPanel.add(infoLabel);
-
 
         menuPanel.add(logoPanel, BorderLayout.NORTH);
         menuPanel.add(buttonPanel, BorderLayout.CENTER);
@@ -148,8 +225,7 @@ public class BattleGUI extends JFrame {
         button.setFont(new Font("Arial", Font.BOLD, 14));
         button.setBackground(bgColor);
         button.setForeground(Color.WHITE);
-        button.setToolTipText(description); // Tooltip con descripción detallada
-
+        button.setToolTipText(description);
 
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -344,7 +420,6 @@ public class BattleGUI extends JFrame {
         turnTimerLabel.setFont(new Font("Arial", Font.BOLD, 16));
         panelInfo.add(turnTimerLabel);
 
-
         JPanel mainOptionsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         mainOptionsPanel.setBackground(Color.decode("#C8FC4B"));
         mainOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
@@ -417,7 +492,7 @@ public class BattleGUI extends JFrame {
     public void showAttackOptions(List<Move> moves) {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
         attackPanel.removeAll();
-        attackPanel.setLayout(new GridLayout(0, 1, 5, 5)); // Mejor distribución de los botones
+        attackPanel.setLayout(new GridLayout(0, 1, 5, 5));
 
         Map<JButton, Integer> buttonIndexMap = new HashMap<>();
 
@@ -506,10 +581,7 @@ public class BattleGUI extends JFrame {
      * Este método reemplaza la llamada directa al menú principal.
      */
     public void showInitialScreen() {
-        // Ocultar la ventana principal (menú) hasta que se seleccione el modo
         setVisible(false);
-
-        // Mostrar la ventana de selección de modo
         ModeSelectionGUI selector = new ModeSelectionGUI(this);
         selector.setVisible(true);
     }
@@ -519,9 +591,7 @@ public class BattleGUI extends JFrame {
      * Muestra la pantalla de selección de modo de juego (PvP, PvM, MvM).
      */
     public void showGameModeSelection() {
-        // Hacemos visible la ventana principal con el menú de modos de juego
         setVisible(true);
-        // El menú ya está configurado en el constructor, así que solo lo hacemos visible
     }
 
     /**
@@ -529,10 +599,8 @@ public class BattleGUI extends JFrame {
      * Inicia directamente una partida en modo supervivencia.
      */
     public void startSurvivalGame() {
-        // Ocultar cualquier ventana previa
         setVisible(false);
 
-        // Solicitamos nombres de jugadores
         String player1 = JOptionPane.showInputDialog(this, "Nombre del Jugador 1:");
         if (player1 == null || player1.trim().isEmpty()) {
             player1 = "Jugador 1";
@@ -543,11 +611,8 @@ public class BattleGUI extends JFrame {
             player2 = "Jugador 2";
         }
 
-        // Configurar la ventana de batalla
         setupBattleWindow();
         setVisible(true);
-
-        // Iniciar el modo supervivencia
         controller.startSurvivalMode(player1, player2);
     }
 
@@ -558,10 +623,9 @@ public class BattleGUI extends JFrame {
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
-        BattleGUI gui = new BattleGUI();
-        // En lugar de mostrar el menú principal, mostrar la selección de modo
-        gui.showInitialScreen();
+        SwingUtilities.invokeLater(() -> {
+            BattleGUI gui = new BattleGUI();
+            gui.showInitialScreen();
+        });
     }
-
-
 }
