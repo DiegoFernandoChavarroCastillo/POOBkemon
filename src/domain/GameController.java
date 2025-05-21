@@ -19,6 +19,7 @@ public class GameController {
     public static final int MODO_NORMAL = 0;
     public static final int MODO_SUPERVIVENCIA = 1;
     private static final long serialVersionUID = 1L;
+    private BattleEventListener eventListener;
 
     /**
      * Crea un nuevo controlador del juego con la interfaz de usuario dada.
@@ -27,6 +28,7 @@ public class GameController {
      */
     public GameController(BattleGUI gui) {
         this.gui = gui;
+        this.eventListener = gui;
     }
 
     /**
@@ -243,6 +245,15 @@ public class GameController {
      * @param moveIndex índice del movimiento seleccionado
      */
     public void executeAttack(int moveIndex) {
+        gui.getBattleLogPanel().clearMessages();
+        Pokemon attacker = currentBattle.getCurrentPlayer().getActivePokemon();
+        Pokemon target = currentBattle.getOpponent().getActivePokemon();
+        Move move = attacker.getMoves().get(moveIndex);
+        // Notificar el evento de ataque
+        if (eventListener != null) {
+            eventListener.onAttackPerformed(attacker.getName(), target.getName(), move.name());
+        }
+
         currentBattle.performAction(Action.createAttack(moveIndex));
         updateUI();
 
@@ -261,6 +272,7 @@ public class GameController {
      * Muestra un cuadro de diálogo para cambiar el Pokémon activo del jugador actual.
      */
     public void showSwitchPokemonDialog() {
+        gui.getBattleLogPanel().clearMessages();
         Trainer current = currentBattle.getCurrentPlayer();
         String[] pokemons = new String[current.getTeam().getPokemons().size()];
 
@@ -281,6 +293,13 @@ public class GameController {
 
         if (selected != null) {
             int pokemonIndex = Arrays.asList(pokemons).indexOf(selected);
+
+            // Notificar el evento de cambio de Pokémon
+            Pokemon selectedPokemon = current.getTeam().getPokemons().get(pokemonIndex);
+            if (eventListener != null) {
+                eventListener.onPokemonSwitched(current.getName(), selectedPokemon.getName());
+            }
+
             currentBattle.performAction(Action.createSwitchPokemon(pokemonIndex));
             updateUI();
             if (turnTimer != null) {
@@ -295,6 +314,7 @@ public class GameController {
      * Si hay ítems disponibles, permite usarlos sobre un Pokémon del equipo.
      */
     public void showItemSelectionDialog() {
+        gui.getBattleLogPanel().clearMessages();
         Trainer current = currentBattle.getCurrentPlayer();
 
         if (current.getItems().isEmpty()) {
@@ -335,6 +355,14 @@ public class GameController {
 
             if (selectedTarget != null) {
                 int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
+
+                // Notificar el evento de uso de ítem
+                Item selectedItem = current.getItems().get(itemIndex);
+                Pokemon targetPokemon = current.getTeam().getPokemons().get(targetIndex);
+                if (eventListener != null) {
+                    eventListener.onItemUsed(current.getName(), selectedItem.getName(), targetPokemon.getName());
+                }
+
                 currentBattle.performAction(Action.createUseItem(itemIndex, targetIndex));
                 updateUI();
                 if (turnTimer != null) {
