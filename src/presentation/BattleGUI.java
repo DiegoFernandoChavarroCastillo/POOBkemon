@@ -250,32 +250,43 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     }
 
     public void updateBattleInfo(BattleState state) {
-        updatePokemonInfo(state.getPlayer1Pokemon(), labelInfo1, hpBar1, panelPok1);
-        updatePokemonInfo(state.getPlayer2Pokemon(), labelInfo2, hpBar2, panelPok2);
+        // Determinar qué Pokémon está activo (con turno) y cuál es el oponente
+        boolean isPlayer1Turn = state.isPlayer1Turn();
+        Pokemon player1Pokemon = state.getPlayer1Pokemon();
+        Pokemon player2Pokemon = state.getPlayer2Pokemon();
+        String player1Name = state.getPlayer1Name();
+        String player2Name = state.getPlayer2Name();
 
-        loadPokemonSprite(pok1Label, state.getPlayer1Pokemon().getName().toLowerCase());
-        loadPokemonSprite(pok2Label, state.getPlayer2Pokemon().getName().toLowerCase());
+        // Actualizar la información de los Pokémon en sus respectivos paneles (siempre mismas posiciones)
+        updatePokemonInfo(player1Pokemon, labelInfo1, hpBar1, panelPok1);
+        updatePokemonInfo(player2Pokemon, labelInfo2, hpBar2, panelPok2);
+
+        // Cargar los sprites (siempre mismas posiciones)
+        loadPokemonSprite(pok1Label, player1Pokemon.getName().toLowerCase(), true);  // Player 1 (back view)
+        loadPokemonSprite(pok2Label, player2Pokemon.getName().toLowerCase(), false); // Player 2 (front view)
+
+        // Resaltar el panel del Pokémon activo según el turno
+        if (isPlayer1Turn) {
+            panelPok1.setBorder(BorderFactory.createLineBorder(new Color(200, 0, 0), 3));
+            panelPok2.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
+        } else {
+            panelPok2.setBorder(BorderFactory.createLineBorder(new Color(200, 0, 0), 3));
+            panelPok1.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
+        }
 
         String turnInfo = "Turno de " + state.getCurrentPlayerName();
-        Color turnColor = state.isPlayer1Turn() ? new Color(50, 150, 250) : new Color(250, 50, 50);
-
-        panelPok1.setBorder(BorderFactory.createLineBorder(
-                state.isPlayer1Turn() ? new Color(200, 0, 0) : new Color(100, 100, 100),
-                state.isPlayer1Turn() ? 3 : 2));
-        panelPok2.setBorder(BorderFactory.createLineBorder(
-                state.isPlayer1Turn() ? new Color(100, 100, 100) : new Color(200, 0, 0),
-                state.isPlayer1Turn() ? 2 : 3));
+        Color turnColor = isPlayer1Turn ? new Color(50, 150, 250) : new Color(250, 50, 50);
 
         String statusText = "<html><div style='text-align:center;color:black;'>" +
                 "<b><font color='" + String.format("#%02x%02x%02x",
                 turnColor.getRed(), turnColor.getGreen(), turnColor.getBlue()) + "'>" +
                 turnInfo + "</font></b><br>" +
-                state.getPlayer1Name() + ": " +
-                "<b>" + state.getPlayer1Pokemon().getName() + "</b> (" + state.getPlayer1Pokemon().getHp() + "/" +
-                state.getPlayer1Pokemon().getMaxHp() + " HP)<br>" +
-                state.getPlayer2Name() + ": " +
-                "<b>" + state.getPlayer2Pokemon().getName() + "</b> (" + state.getPlayer2Pokemon().getHp() + "/" +
-                state.getPlayer2Pokemon().getMaxHp() + " HP)";
+                player1Name + ": " +
+                "<b>" + player1Pokemon.getName() + "</b> (" + player1Pokemon.getHp() + "/" +
+                player1Pokemon.getMaxHp() + " HP)<br>" +
+                player2Name + ": " +
+                "<b>" + player2Pokemon.getName() + "</b> (" + player2Pokemon.getHp() + "/" +
+                player2Pokemon.getMaxHp() + " HP)";
 
         if (state.getClimate() != null) {
             statusText += "<br>Clima: <i>" + state.getClimate() + "</i>";
@@ -291,6 +302,7 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         btnItem.setEnabled(isHumanTurn);
         btnHuir.setEnabled(isHumanTurn);
     }
+
 
     private void updatePokemonInfo(Pokemon pokemon, JLabel infoLabel, JProgressBar hpBar, JPanel panel) {
         infoLabel.setText(pokemon.getName() + " Lv." + pokemon.getLevel());
@@ -322,30 +334,16 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         }
     }
 
-    private void loadPokemonSprite(JLabel label, String pokemonName) {
+    private void loadPokemonSprite(JLabel label, String pokemonName, boolean isBackView) {
         String basePath = "src/sprites/";
         int spriteWidth = 200;
         int spriteHeight = 200;
 
-        // Determinar si este Pokémon pertenece al jugador actual
-        boolean isCurrentPlayerPokemon = false;
-        if (controller != null && controller.getCurrentBattle() != null) {
-            Trainer currentTrainer = controller.getCurrentTrainer();
-            Pokemon currentPokemon = controller.getCurrentBattle().getBattleState().getPlayer1Pokemon();
-            Pokemon enemyPokemon = controller.getCurrentBattle().getBattleState().getPlayer2Pokemon();
-
-            // Si el Pokémon pertenece al jugador actual, debe mostrarse de espaldas
-            if (label == pok1Label && currentTrainer == controller.getCurrentBattle().getPlayer1() ||
-                    label == pok2Label && currentTrainer == controller.getCurrentBattle().getPlayer2()) {
-                isCurrentPlayerPokemon = true;
-            }
-        }
-
         // Añadir sufijo según perspectiva
-        String suffix = isCurrentPlayerPokemon ? "_back" : "_front";
+        String suffix = isBackView ? "_back" : "_front";
 
         try {
-            // Primero intentar cargar con el sufijo específico
+            // Intentar cargar con sufijo específico
             File file = new File(basePath + pokemonName + suffix + ".png");
             if (file.exists()) {
                 BufferedImage originalImage = ImageIO.read(file);
@@ -354,8 +352,17 @@ public class BattleGUI extends JFrame implements BattleEventListener {
                 return;
             }
 
-            // Si no se encuentra el archivo con sufijo, intentar con los formatos originales
-            for (String ext : new String[]{".png", ".jpg", ".gif"}) {
+            // Intentar sin sufijo
+            file = new File(basePath + pokemonName + ".png");
+            if (file.exists()) {
+                BufferedImage originalImage = ImageIO.read(file);
+                Image scaledImage = originalImage.getScaledInstance(spriteWidth, spriteHeight, Image.SCALE_SMOOTH);
+                label.setIcon(new ImageIcon(scaledImage));
+                return;
+            }
+
+            // Si no se encuentra, probar otros formatos
+            for (String ext : new String[]{".jpg", ".gif"}) {
                 file = new File(basePath + pokemonName + ext);
                 if (file.exists()) {
                     BufferedImage originalImage = ImageIO.read(file);
@@ -368,29 +375,36 @@ public class BattleGUI extends JFrame implements BattleEventListener {
             // Si no se encuentra ninguna imagen, mostrar el nombre
             label.setIcon(null);
             label.setText(pokemonName);
-            label.setFont(pokemonFont);
+            label.setHorizontalAlignment(JLabel.CENTER);
+            label.setVerticalAlignment(JLabel.CENTER);
+            label.setFont(pokemonFont.deriveFont(Font.BOLD, 16));
+
         } catch (IOException e) {
             System.err.println("Error al cargar imagen: " + e.getMessage());
             label.setIcon(null);
             label.setText(pokemonName);
-            label.setFont(pokemonFont);
+            label.setHorizontalAlignment(JLabel.CENTER);
+            label.setVerticalAlignment(JLabel.CENTER);
+            label.setFont(pokemonFont.deriveFont(Font.BOLD, 16));
         }
     }
+
 
     private void prepareElements() {
         // Panel principal con fondo azul como en Pokémon Esmeralda
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(new Color(120, 184, 232)); // Azul cielo Pokémon
 
-        // Panel superior con información de Pokémon
-        panelSuperior = new JPanel(new GridLayout(1, 2));
-        panelSuperior.setBackground(new Color(120, 184, 232));
-        panelSuperior.setBorder(BorderFactory.createLineBorder(new Color(64, 120, 192), 3));
+        // Panel de batalla que contendrá los sprites de Pokémon en formato Esmeralda
+        JPanel battlePanel = new JPanel();
+        battlePanel.setLayout(null); // Usamos posicionamiento absoluto para el estilo Esmeralda
+        battlePanel.setBackground(new Color(120, 184, 232));
 
-        // Panel Pokémon 1 (jugador)
+        // Paneles de información de los Pokémon
         panelPok1 = new JPanel(new BorderLayout());
         panelPok1.setBackground(new Color(255, 255, 200)); // Amarillo claro Pokémon
         panelPok1.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
+        panelPok1.setBounds(20, 20, 250, 80); // Posición en la esquina superior izquierda
 
         labelInfo1 = new JLabel("", JLabel.CENTER);
         labelInfo1.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
@@ -405,10 +419,10 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelPok1.add(labelInfo1, BorderLayout.NORTH);
         panelPok1.add(hpBar1, BorderLayout.SOUTH);
 
-        // Panel Pokémon 2 (oponente)
         panelPok2 = new JPanel(new BorderLayout());
         panelPok2.setBackground(new Color(255, 255, 200)); // Amarillo claro Pokémon
         panelPok2.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
+        panelPok2.setBounds(530, 20, 250, 80); // Posición en la esquina superior derecha
 
         labelInfo2 = new JLabel("", JLabel.CENTER);
         labelInfo2.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
@@ -423,18 +437,18 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelPok2.add(labelInfo2, BorderLayout.NORTH);
         panelPok2.add(hpBar2, BorderLayout.SOUTH);
 
-        panelSuperior.add(panelPok1);
-        panelSuperior.add(panelPok2);
-
-        // Panel de imágenes de Pokémon
-        panelImagenes = new JPanel(new GridLayout(1, 2));
-        panelImagenes.setBackground(new Color(120, 184, 232));
-
+        // Etiquetas para los sprites de Pokémon con posicionamiento estilo Esmeralda
         pok1Label = new JLabel("", JLabel.CENTER);
-        pok2Label = new JLabel("", JLabel.CENTER);
+        pok1Label.setBounds(80, 220, 200, 200); // Pokémon activo en la parte inferior izquierda
 
-        panelImagenes.add(pok1Label);
-        panelImagenes.add(pok2Label);
+        pok2Label = new JLabel("", JLabel.CENTER);
+        pok2Label.setBounds(500, 120, 200, 200); // Pokémon rival en la parte superior derecha
+
+        // Agregar componentes al panel de batalla
+        battlePanel.add(panelPok1);
+        battlePanel.add(panelPok2);
+        battlePanel.add(pok1Label);
+        battlePanel.add(pok2Label);
 
         // Panel inferior con opciones
         panelInferior = new JPanel(new BorderLayout());
@@ -458,6 +472,7 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         // Panel de opciones principales
         cardLayout = new CardLayout();
         panelOpciones = new JPanel(cardLayout);
+        panelOpciones.setPreferredSize(new Dimension(450, 110)); // Fijar tamaño del panel de opciones
 
         JPanel mainOptionsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
         mainOptionsPanel.setBackground(new Color(200, 224, 248)); // Azul claro Pokémon
@@ -472,7 +487,7 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         mainOptionsPanel.add(btnItem);
         mainOptionsPanel.add(btnHuir);
 
-        JPanel attackOptionsPanel = new JPanel(new GridLayout(4, 1, 5, 5));
+        JPanel attackOptionsPanel = new JPanel();
         attackOptionsPanel.setBackground(new Color(200, 224, 248)); // Azul claro Pokémon
 
         panelOpciones.add(mainOptionsPanel, "main");
@@ -480,7 +495,7 @@ public class BattleGUI extends JFrame implements BattleEventListener {
 
         // Panel de registro de batalla
         logPanel = new BattleLogPanel();
-        logPanel.setPreferredSize(new Dimension(getWidth(), 80));
+        logPanel.setPreferredSize(new Dimension(getWidth(), 50));
         logPanel.setBackground(new Color(64, 120, 192)); // Azul oscuro Pokémon
         logPanel.setForeground(Color.WHITE);
         logPanel.setFont(pokemonFont.deriveFont(14f));
@@ -489,16 +504,12 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelInferior.add(panelInfo, BorderLayout.WEST);
         panelInferior.add(panelOpciones, BorderLayout.CENTER);
 
-
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(logPanel, BorderLayout.NORTH);
         bottomPanel.add(panelInferior, BorderLayout.SOUTH);
+
+        mainPanel.add(battlePanel, BorderLayout.CENTER);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-
-
-        mainPanel.add(panelSuperior, BorderLayout.NORTH);
-        mainPanel.add(panelImagenes, BorderLayout.CENTER);
-
 
         add(mainPanel);
     }
@@ -538,13 +549,16 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     public void showAttackOptions(List<Move> moves) {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
         attackPanel.removeAll();
-        attackPanel.setLayout(new GridLayout(0, 1, 5, 5));
+
+        // Usar un GridLayout fijo con mismo tamaño que el panel principal
+        int rows = Math.min(5, moves.size() + 1); // máximo 4 movimientos + botón cancelar
+        attackPanel.setLayout(new GridLayout(rows, 1, 5, 5));
 
         for (int i = 0; i < moves.size(); i++) {
             Move move = moves.get(i);
             JButton moveButton = createBattleButton(
                     move.name() + " (PP: " + move.pp() + "/" + move.maxPP() + ")",
-                    new Color(200, 120, 200)); 
+                    new Color(200, 120, 200));
 
             final int moveIndex = i;
             moveButton.addActionListener(e -> controller.executeAttack(moveIndex));
@@ -560,6 +574,9 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         JButton cancelButton = createBattleButton("CANCELAR", new Color(160, 160, 160));
         cancelButton.addActionListener(e -> cardLayout.show(panelOpciones, "main"));
         attackPanel.add(cancelButton);
+
+        // Asegurar que el panel mantiene un tamaño consistente
+        attackPanel.setPreferredSize(new Dimension(450, 150));
 
         cardLayout.show(panelOpciones, "attacks");
         attackPanel.revalidate();
