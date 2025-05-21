@@ -8,6 +8,7 @@ import presentation.PokemonSelectionGUI;
 import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
+import java.io.File;
 import java.util.*;
 import java.util.List;
 
@@ -322,56 +323,84 @@ public class GameController {
             return;
         }
 
-        String[] itemNames = current.getItems().stream()
-                .map(Item::getName)
-                .toArray(String[]::new);
+        JDialog itemDialog = new JDialog(gui, "Usar Ítem", true);
+        itemDialog.setLayout(new BorderLayout());
+        itemDialog.setSize(400, 300);
+        itemDialog.setLocationRelativeTo(gui);
+        itemDialog.getContentPane().setBackground(new Color(152, 251, 152)); // Verde Esmeralda
 
-        String selectedItemName = (String) JOptionPane.showInputDialog(
-                gui,
-                "Selecciona un ítem:",
-                "Usar Ítem",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                itemNames,
-                itemNames[0]);
+        JLabel titleLabel = new JLabel("Selecciona un ítem", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        itemDialog.add(titleLabel, BorderLayout.NORTH);
 
-        if (selectedItemName != null) {
-            int itemIndex = Arrays.asList(itemNames).indexOf(selectedItemName);
+        JPanel itemPanel = new JPanel();
+        itemPanel.setLayout(new GridLayout(0, 1, 5, 5));
+        itemPanel.setBackground(new Color(152, 251, 152));
 
-            String[] targets = new String[current.getTeam().getPokemons().size()];
-            for (int i = 0; i < targets.length; i++) {
-                Pokemon p = current.getTeam().getPokemons().get(i);
-                targets[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")";
+        for (int i = 0; i < current.getItems().size(); i++) {
+            Item item = current.getItems().get(i);
+            String itemName = item.getName();
+            JButton itemButton = new JButton(itemName);
+
+            // Cargar imagen del ítem
+            String imagePath = "src/sprites/" + itemName.toLowerCase() + ".png";
+            File imageFile = new File(imagePath);
+            if (imageFile.exists()) {
+                ImageIcon icon = new ImageIcon(imagePath);
+                Image scaled = icon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
+                itemButton.setIcon(new ImageIcon(scaled));
             }
 
-            String selectedTarget = (String) JOptionPane.showInputDialog(
-                    gui,
-                    "Selecciona un Pokémon objetivo:",
-                    "Objetivo del Ítem",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    targets,
-                    targets[0]);
+            itemButton.setBackground(new Color(176, 224, 230)); // Azul agua GBA
+            itemButton.setFocusPainted(false);
+            itemButton.setHorizontalAlignment(SwingConstants.LEFT);
 
-            if (selectedTarget != null) {
-                int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
+            int itemIndex = i;
+            itemButton.addActionListener(e -> {
+                itemDialog.dispose();
 
-                // Notificar el evento de uso de ítem
-                Item selectedItem = current.getItems().get(itemIndex);
-                Pokemon targetPokemon = current.getTeam().getPokemons().get(targetIndex);
-                if (eventListener != null) {
-                    eventListener.onItemUsed(current.getName(), selectedItem.getName(), targetPokemon.getName());
+                // Mostrar segunda ventana para elegir Pokémon objetivo
+                String[] targets = current.getTeam().getPokemons().stream()
+                        .map(p -> p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")")
+                        .toArray(String[]::new);
+
+                String selectedTarget = (String) JOptionPane.showInputDialog(
+                        gui,
+                        "Selecciona un Pokémon objetivo:",
+                        "Objetivo del Ítem",
+                        JOptionPane.PLAIN_MESSAGE,
+                        null,
+                        targets,
+                        targets[0]);
+
+                if (selectedTarget != null) {
+                    int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
+
+                    Item selectedItem = current.getItems().get(itemIndex);
+                    Pokemon targetPokemon = current.getTeam().getPokemons().get(targetIndex);
+                    if (eventListener != null) {
+                        eventListener.onItemUsed(current.getName(), selectedItem.getName(), targetPokemon.getName());
+                    }
+
+                    currentBattle.performAction(Action.createUseItem(itemIndex, targetIndex));
+                    updateUI();
+                    if (turnTimer != null) {
+                        turnTimer.stop();
+                    }
+                    endPlayerTurn();
                 }
+            });
 
-                currentBattle.performAction(Action.createUseItem(itemIndex, targetIndex));
-                updateUI();
-                if (turnTimer != null) {
-                    turnTimer.stop();
-                }
-                endPlayerTurn();
-            }
+            itemPanel.add(itemButton);
         }
+
+        JScrollPane scrollPane = new JScrollPane(itemPanel);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        itemDialog.add(scrollPane, BorderLayout.CENTER);
+        itemDialog.setVisible(true);
     }
+
 
     /**
      * Muestra un cuadro de diálogo para que el jugador actual confirme si desea rendirse.
