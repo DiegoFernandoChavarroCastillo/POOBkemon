@@ -1,13 +1,15 @@
     package domain;
 
-    import java.util.ArrayList;
-    import java.util.HashMap;
-    import java.util.List;
-    import java.util.Map;
+    import java.io.Serializable;
+    import java.util.*;
 
-    public class MoveDatabase {
+    /**
+     * Base de datos de movimientos disponibles en el juego.
+     * Proporciona acceso a movimientos predefinidos y utilidades para obtener copias y selecciones aleatorias.
+     */
+    public class MoveDatabase implements Serializable {
         private static final Map<String, Move> moves = new HashMap<>();
-
+        private static final long serialVersionUID = 1L;
         static {
             moves.put("BODY SLAM", new PhysicalMove("BODY SLAM", "NORMAL", 85, 100, 15, 0));
             moves.put("HYPER BEAM", new PhysicalMove("HYPER BEAM", "NORMAL", 150, 90, 5, 0));
@@ -44,16 +46,58 @@
             moves.put("CONFUSION", new SpecialMove("CONFUSION", "PSYCHIC", 50, 100, 25, 0));
             moves.put("ICE BEAM", new SpecialMove("ICE BEAM", "ICE", 90, 100, 10, 0));
             moves.put("BLIZZARD", new SpecialMove("BLIZZARD", "ICE", 110, 70, 5, 0));
-            moves.put("STRUGGLE", new PhysicalMove("STRUGGLE", "NORMAL", 50, 100, 999, 0));
+            // forcejeo
+            moves.put("STRUGGLE", new StruggleMove());;
+
+            //estado
+            moves.put("SANDSTORM", new WeatherMove("SANDSTORM", "ROCK", 100, 10, 0, "sandstorm", 5));
+
+
+            //pruebas
+            moves.put("p1", new SpecialMove("p1", "PSYCHIC", 1, 100, 1, 0));
+            moves.put("p2", new SpecialMove("p2", "PSYCHIC", 1, 100, 1, 0));
+            moves.put("p3", new SpecialMove("p3", "PSYCHIC", 1, 100, 1, 0));
+            moves.put("p4", new SpecialMove("p4", "PSYCHIC", 5, 70, 1, 0));
         }
 
-
+        /**
+         * Devuelve una copia del movimiento con el nombre especificado.
+         *
+         * @param name nombre del movimiento
+         * @return instancia clonada del movimiento o null si no existe
+         */
         public static Move getMove(String name) {
             Move base = moves.get(name.toUpperCase());
             return base != null ? base.clone() : null;
         }
+
+        /**
+         * Devuelve una lista con todos los movimientos disponibles.
+         *
+         * @return lista de movimientos
+         */
         public static List<Move> getAvailableMoves() {
             return new ArrayList<>(moves.values());
+        }
+
+        /**
+         * Devuelve una lista aleatoria de movimientos clonados.
+         *
+         * @param n número de movimientos a seleccionar
+         * @return lista de movimientos clonados aleatoriamente
+         * @throws IllegalStateException si no hay suficientes movimientos
+         */
+        public static List<Move> getRandomMoves(int n) {
+            List<Move> available = new ArrayList<>(moves.values());
+            if (available.size() < n) {
+                throw new IllegalStateException("No hay suficientes movimientos disponibles.");
+            }
+            Collections.shuffle(available); // aleatorizar
+            List<Move> selected = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                selected.add(available.get(i).clone());
+            }
+            return selected;
         }
 
     }

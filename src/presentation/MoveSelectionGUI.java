@@ -8,8 +8,8 @@ import java.util.*;
 import java.util.List;
 
 /**
- * A dialog for selecting moves for a Pokémon. Allows the user to choose exactly 4 moves
- * from the available moves in the MoveDatabase.
+ * Diálogo para seleccionar movimientos para un Pokémon.
+ * Permite al usuario elegir exactamente 4 movimientos desde la base de datos de movimientos disponibles.
  */
 public class MoveSelectionGUI extends JDialog {
     private Pokemon pokemon;
@@ -19,10 +19,10 @@ public class MoveSelectionGUI extends JDialog {
     private JLabel pokemonInfoLabel;
 
     /**
-     * Constructs a MoveSelectionGUI dialog.
+     * Construye el diálogo MoveSelectionGUI.
      *
-     * @param parent  the parent frame of this dialog
-     * @param pokemon the Pokémon that will receive the selected moves
+     * @param parent  la ventana principal (padre) del diálogo
+     * @param pokemon el Pokémon que recibirá los movimientos seleccionados
      */
     public MoveSelectionGUI(JFrame parent, Pokemon pokemon) {
         super(parent, "Seleccionar Movimientos para " + pokemon.getName(), true);
@@ -34,9 +34,12 @@ public class MoveSelectionGUI extends JDialog {
         setupUI();
     }
 
+    /**
+     * Configura la interfaz gráfica del diálogo.
+     * Establece paneles, etiquetas y botones.
+     */
     private void setupUI() {
         setLayout(new BorderLayout(10, 10));
-
 
         JPanel topPanel = new JPanel(new BorderLayout());
         pokemonInfoLabel = new JLabel(getPokemonInfoText(), JLabel.CENTER);
@@ -44,13 +47,10 @@ public class MoveSelectionGUI extends JDialog {
         topPanel.add(pokemonInfoLabel, BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
-
         movesPanel = new JPanel(new GridLayout(0, 2, 10, 10));
         movesPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
         JScrollPane scrollPane = new JScrollPane(movesPanel);
         add(scrollPane, BorderLayout.CENTER);
-
 
         JPanel bottomPanel = new JPanel();
         confirmButton = new JButton("Confirmar (" + selectedMoves.size() + "/4)");
@@ -64,19 +64,25 @@ public class MoveSelectionGUI extends JDialog {
         bottomPanel.add(confirmButton);
         add(bottomPanel, BorderLayout.SOUTH);
 
-
         loadAvailableMoves();
     }
 
+    /**
+     * Retorna el texto HTML con la información del Pokémon.
+     *
+     * @return cadena de texto con nombre, nivel y tipo del Pokémon
+     */
     private String getPokemonInfoText() {
         return "<html><b>" + pokemon.getName() + "</b> (Nv. " + pokemon.getLevel() +
                 ") - Tipo: " + pokemon.getType() + "</html>";
     }
 
+    /**
+     * Carga los movimientos disponibles desde la base de datos.
+     * Ordena alfabéticamente y los muestra como botones.
+     */
     private void loadAvailableMoves() {
         List<Move> availableMoves = MoveDatabase.getAvailableMoves();
-
-
         availableMoves.sort(Comparator.comparing(Move::name));
 
         for (Move move : availableMoves) {
@@ -87,6 +93,12 @@ public class MoveSelectionGUI extends JDialog {
         movesPanel.revalidate();
     }
 
+    /**
+     * Crea un botón gráfico con la información del movimiento.
+     *
+     * @param move el movimiento a mostrar
+     * @return botón configurado
+     */
     private JButton createMoveButton(Move move) {
         JButton button = new JButton("<html><b>" + move.name() + "</b><br>" +
                 "Tipo: " + move.type() + "<br>" +
@@ -95,12 +107,17 @@ public class MoveSelectionGUI extends JDialog {
         button.setHorizontalAlignment(SwingConstants.LEFT);
         button.setBackground(getMoveTypeColor(move.type()));
         button.setForeground(Color.WHITE);
-
         button.addActionListener(e -> toggleMoveSelection(move, button));
 
         return button;
     }
 
+    /**
+     * Asigna un color representativo según el tipo del movimiento.
+     *
+     * @param type el tipo del movimiento
+     * @return color asociado al tipo
+     */
     private Color getMoveTypeColor(String type) {
         switch (type.toUpperCase()) {
             case "FIRE": return new Color(240, 80, 50);
@@ -124,6 +141,12 @@ public class MoveSelectionGUI extends JDialog {
         }
     }
 
+    /**
+     * Añade o quita un movimiento de la selección y actualiza el botón.
+     *
+     * @param move   el movimiento seleccionado o deseleccionado
+     * @param button el botón asociado al movimiento
+     */
     private void toggleMoveSelection(Move move, JButton button) {
         if (selectedMoves.contains(move)) {
             selectedMoves.remove(move);
@@ -136,11 +159,18 @@ public class MoveSelectionGUI extends JDialog {
         updateConfirmButton();
     }
 
+    /**
+     * Actualiza el botón de confirmación con el número actual de movimientos seleccionados.
+     */
     private void updateConfirmButton() {
         confirmButton.setText("Confirmar (" + selectedMoves.size() + "/4)");
         confirmButton.setEnabled(selectedMoves.size() == 4);
     }
 
+    /**
+     * Valida y asigna los movimientos seleccionados al Pokémon.
+     * Muestra un error si no hay exactamente 4 movimientos seleccionados.
+     */
     private void confirmSelection() {
         if (selectedMoves.size() != 4) {
             JOptionPane.showMessageDialog(this,
@@ -149,15 +179,20 @@ public class MoveSelectionGUI extends JDialog {
             return;
         }
 
-        pokemon.setMoves(new ArrayList<>(selectedMoves));
+        List<Move> clonedMoves = new ArrayList<>();
+        for (Move move : selectedMoves) {
+            clonedMoves.add(move.clone());
+        }
+
+        pokemon.setMoves(clonedMoves);
         dispose();
     }
 
     /**
-     * Displays the move selection dialog.
+     * Muestra el diálogo para seleccionar movimientos.
      *
-     * @param parent   the parent component
-     * @param pokemon  the Pokémon that will receive the selected moves
+     * @param parent  el componente padre
+     * @param pokemon el Pokémon que recibirá los movimientos seleccionados
      */
     public static void showMoveSelection(Component parent, Pokemon pokemon) {
         MoveSelectionGUI dialog = new MoveSelectionGUI(

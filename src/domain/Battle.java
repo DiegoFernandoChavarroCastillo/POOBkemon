@@ -1,22 +1,27 @@
 package domain;
 
-import javax.swing.*;
-import java.util.Optional;
-import java.util.Random;
+import java.io.Serializable;
 
 /**
- * Clase que maneja la lógica de una batalla Pokémon entre dos entrenadores.
+ * Clase que gestiona la lógica de una batalla Pokémon entre dos entrenadores.
+ * Administra el flujo de turnos, la ejecución de acciones, la verificación de estados
+ * y las condiciones climáticas durante la batalla.
  */
-public class Battle {
+public class Battle implements Serializable {
     private Trainer player1;
     private Trainer player2;
     private int turn;
     private boolean battleEnded;
-
     private static String currentClimate = null;
     private static int climateDuration = 0;
-    private static final Random random = new Random();
+    private static final long serialVersionUID = 1L;
 
+    /**
+     * Crea una nueva batalla entre dos entrenadores.
+     *
+     * @param player1 Primer entrenador
+     * @param player2 Segundo entrenador
+     */
     public Battle(Trainer player1, Trainer player2) {
         this.player1 = player1;
         this.player2 = player2;
@@ -25,33 +30,27 @@ public class Battle {
     }
 
     /**
-     * Verifica si el Pokémon activo del oponente se ha debilitado
-     * y actualiza el estado de la batalla.
+     * Obtiene el estado actual de la batalla.
+     *
+     * @return Un objeto {@code BattleState} con la información de la batalla
      */
-    private void checkFaintedPokemon() {
-        Trainer opponent = getOpponent();
-        Trainer current = getCurrentPlayer();
-        Pokemon activeOpponentPokemon = opponent.getActivePokemon();
-
-        if (activeOpponentPokemon != null && activeOpponentPokemon.getHp() <= 0) {
-            activeOpponentPokemon.setHp(0);
-
-            if (opponent.getTeam().isAllFainted()) {
-                battleEnded = true;
-            } else if (opponent.isCPU()) {
-                // Lógica para CPU
-                int switchIndex = opponent.getTeam().findHealthyPokemon();
-                if (switchIndex != -1) {
-                    opponent.switchPokemon(switchIndex);
-                }
-            }
-
-        }
+    public BattleState getBattleState() {
+        return new BattleState(
+                player1.getName(),
+                player2.getName(),
+                player1.getActivePokemon(),
+                player2.getActivePokemon(),
+                turn == 1,
+                !getCurrentPlayer().isCPU(),
+                currentClimate
+        );
     }
 
     /**
-     * Ejecuta una acción en la batalla
-     * @param action Acción a realizar
+     * Ejecuta una acción realizada por el jugador actual.
+     *
+     * @param action Acción a ejecutar
+     * @throws IllegalStateException si la batalla ya terminó o si el jugador actual es una CPU
      */
     public void performAction(Action action) {
         if (battleEnded) {
@@ -59,9 +58,8 @@ public class Battle {
         }
 
         Trainer current = getCurrentPlayer();
-
         if (current.isCPU()) {
-            throw new IllegalStateException("No se pueden realizar acciones manuales para un CPU");
+            throw new IllegalStateException("No se pueden ejecutar acciones manuales para una CPU");
         }
 
         executeAction(current, action);
@@ -69,25 +67,120 @@ public class Battle {
     }
 
     /**
-     * Ejecuta el turno automático de la CPU
+     * Ejecuta el turno automático si el jugador actual es una CPU.
      */
     public void executeCpuTurn() {
         if (!battleEnded && getCurrentPlayer().isCPU()) {
             CPUTrainer cpu = (CPUTrainer) getCurrentPlayer();
-            Action action = cpu.decideAction();
-
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
+            Action action = cpu.decideAction(this);
             executeAction(cpu, action);
             postAction();
         }
     }
 
+    /**
+     * Cambia el turno al otro jugador.
+     */
+    public void changeTurn() {
+        this.turn = 3 - this.turn;
+    }
+
+    /**
+     * Verifica si la batalla ha terminado.
+     *
+     * @return {@code true} si la batalla ha concluido, {@code false} en caso contrario
+     */
+    public boolean isFinished() {
+        return battleEnded;
+    }
+
+    /**
+     * Obtiene el entrenador ganador de la batalla.
+     *
+     * @return El entrenador ganador o {@code null} si la batalla no ha terminado o hay empate
+     */
+    public Trainer getWinner() {
+        if (!battleEnded) return null;
+
+        if (player1.hasAvailablePokemon() && !player2.hasAvailablePokemon()) {
+            return player1;
+        } else if (player2.hasAvailablePokemon() && !player1.hasAvailablePokemon()) {
+            return player2;
+        }
+        return null;
+    }
+
+    /**
+     * Establece el clima actual y su duración.
+     *
+     * @param climate Nombre de la condición climática
+     * @param duration Duración en turnos del clima
+     */
+    public static void setClimate(String climate, int duration) {
+        currentClimate = climate;
+        climateDuration = duration;
+    }
+
+    /**
+     * Obtiene el clima actual de la batalla.
+     *
+     * @return Nombre del clima actual o {@code null} si no hay clima activo
+     */
+    public static String getClimate() {
+        return currentClimate;
+    }
+
+    /**
+     * Obtiene el entrenador cuyo turno es actualmente.
+     *
+     * @return Entrenador actual
+     */
+    public Trainer getCurrentPlayer() {
+        return turn == 1 ? player1 : player2;
+    }
+
+    /**
+     * Obtiene al oponente del jugador actual.
+     *
+     * @return Entrenador oponente
+     */
+    public Trainer getOpponent() {
+        return turn == 1 ? player2 : player1;
+    }
+
+    /**
+     * Obtiene el primer entrenador de la batalla.
+     *
+     * @return Primer entrenador
+     */
+    public Trainer getPlayer1() {
+        return player1;
+    }
+
+    /**
+     * Obtiene el segundo entrenador de la batalla.
+     *
+     * @return Segundo entrenador
+     */
+    public Trainer getPlayer2() {
+        return player2;
+    }
+
+    /**
+     * Obtiene el número del turno actual.
+     *
+     * @return Número de turno (1 o 2)
+     */
+    public int getTurn() {
+        return turn;
+    }
+
+    /**
+     * Ejecuta una acción según su tipo: ataque, uso de objeto o cambio de Pokémon.
+     *
+     * @param current Entrenador que realiza la acción
+     * @param action Acción a ejecutar
+     */
     private void executeAction(Trainer current, Action action) {
         switch (action.getType()) {
             case ATTACK:
@@ -102,28 +195,39 @@ public class Battle {
         }
     }
 
+    /**
+     * Procesa acciones posteriores a un turno: verificar desmayos y actualizar clima.
+     */
     private void postAction() {
+        processTurnStartEffects();
         checkFaintedPokemon();
         updateClimate();
+    }
 
-        if (battleEnded) {
-            return;
-        }
+    /**
+     * Verifica si el Pokémon activo del oponente se ha debilitado y actúa en consecuencia.
+     */
+    private void checkFaintedPokemon() {
+        Trainer opponent = getOpponent();
+        Pokemon activeOpponentPokemon = opponent.getActivePokemon();
 
-        // Solo programar el turno de la CPU si es su turno
-        if (getCurrentPlayer().isCPU()) {
-            new Thread(() -> {
-                try {
-                    Thread.sleep(1000);
-                    executeCpuTurn();
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
+        if (activeOpponentPokemon != null && activeOpponentPokemon.getHp() <= 0) {
+            activeOpponentPokemon.setHp(0);
+
+            if (opponent.getTeam().isAllFainted()) {
+                battleEnded = true;
+            } else if (opponent.isCPU()) {
+                int switchIndex = opponent.getTeam().findHealthyPokemon();
+                if (switchIndex != -1) {
+                    opponent.switchPokemon(switchIndex);
                 }
-            }).start();
+            }
         }
     }
 
-
+    /**
+     * Actualiza la duración restante del clima activo y lo elimina si expira.
+     */
     private void updateClimate() {
         if (climateDuration > 0) {
             climateDuration--;
@@ -133,73 +237,14 @@ public class Battle {
         }
     }
 
-    public void changeTurn() {
-        this.turn = 3 - this.turn;
-    }
-
-    public boolean isFinished() {
-        return battleEnded;
-    }
-
-    public Trainer getWinner() {
-        if (!battleEnded) return null;
-
-        if (player1.hasAvailablePokemon() && !player2.hasAvailablePokemon()) {
-            return player1;
-        } else if (player2.hasAvailablePokemon() && !player1.hasAvailablePokemon()) {
-            return player2;
+    public void processTurnStartEffects() {
+        Trainer[] players = new Trainer[]{player1, player2};
+        for (Trainer player : players) {
+            Pokemon active = player.getTeam().getActivePokemon();
+            if (active != null && active.getHp() > 0) {
+                active.processStartOfTurnEffects();
+            }
         }
-        return null; // Empate
     }
 
-    public static void setClimate(String climate, int duration) {
-        currentClimate = climate;
-        climateDuration = duration;
-    }
-
-    public static String getClimate() {
-        return currentClimate;
-    }
-
-    // Getters
-    public Trainer getCurrentPlayer() {
-        return turn == 1 ? player1 : player2;
-    }
-
-    public Trainer getOpponent() {
-        return turn == 1 ? player2 : player1;
-    }
-
-    public Trainer getPlayer1() {
-        return player1;
-    }
-
-    public Trainer getPlayer2() {
-        return player2;
-    }
-
-    public int getTurn() {
-        return turn;
-    }
-
-    /**
-     * Obtiene el estado actual de la batalla como texto
-     */
-    public String getBattleStatus() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Turno de ").append(getCurrentPlayer().getName()).append("\n");
-        sb.append(player1.getName()).append(" - ").append(player1.getActivePokemon().getName())
-                .append(" [HP: ").append(player1.getActivePokemon().getHp()).append("/")
-                .append(player1.getActivePokemon().getMaxHp()).append("]\n");
-        sb.append(player2.getName()).append(" - ").append(player2.getActivePokemon().getName())
-                .append(" [HP: ").append(player2.getActivePokemon().getHp()).append("/")
-                .append(player2.getActivePokemon().getMaxHp()).append("]\n");
-
-        if (currentClimate != null) {
-            sb.append("Clima actual: ").append(currentClimate)
-                    .append(" (").append(climateDuration).append(" turnos restantes)\n");
-        }
-
-        return sb.toString();
-    }
 }

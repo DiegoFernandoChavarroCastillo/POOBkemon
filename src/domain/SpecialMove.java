@@ -1,11 +1,15 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.Random;
 
 /**
- * Movimiento de tipo especial.
+ * Representa un movimiento especial que causa daño con base en el ataque especial del usuario
+ * y la defensa especial del objetivo.
  */
-public class SpecialMove extends Move {
+public class SpecialMove extends Move implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String name;
     private final String type;
     private final int power;
@@ -14,6 +18,16 @@ public class SpecialMove extends Move {
     private final int priority;
     private int currentPP;
 
+    /**
+     * Crea un nuevo movimiento especial.
+     *
+     * @param name       nombre del movimiento
+     * @param type       tipo del movimiento
+     * @param power      poder base
+     * @param precision  precisión (0–100)
+     * @param maxPP      puntos de poder máximos
+     * @param priority   prioridad en el turno
+     */
     public SpecialMove(String name, String type, int power, int precision, int maxPP, int priority) {
         this.name = name;
         this.type = type;
@@ -24,14 +38,34 @@ public class SpecialMove extends Move {
         this.currentPP = maxPP;
     }
 
+    @Override
     public String name() { return name; }
+
+    @Override
     public String type() { return type; }
+
+    @Override
     public int power() { return power; }
+
+    @Override
     public int precision() { return precision; }
+
+    @Override
     public int pp() { return currentPP; }
+
+    @Override
     public int maxPP() { return maxPP; }
+
+    @Override
     public int priority() { return priority; }
 
+    /**
+     * Aplica el movimiento especial al objetivo si pasa la verificación de precisión.
+     *
+     * @param user   Pokémon que usa el movimiento
+     * @param target Pokémon objetivo
+     */
+    @Override
     public void use(Pokemon user, Pokemon target) {
         if (currentPP <= 0 || target == null) return;
         if (target.getHp() <= 0) return;
@@ -43,5 +77,14 @@ public class SpecialMove extends Move {
             target.takeDamage((int) (damage * multiplier));
             currentPP--;
         }
+    }
+
+    /**
+     * Establece un nuevo valor para los PP del movimiento.
+     *
+     * @param newPP nuevo valor de PP
+     */
+    public void setPP(int newPP) {
+        this.currentPP = Math.max(0, Math.min(maxPP, newPP));
     }
 }

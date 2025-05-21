@@ -2,77 +2,78 @@ package domain;
 
 import java.util.Map;
 
-/**
- * Representa un efecto aplicado por un movimiento.
- */
 public class Effect {
-    private final String type; // statChange, status, climate, restriction, etc.
-    private final String target; // self, opponent, field
-    private final Map<String, Integer> statChanges; // Ej: {"attack": 1, "defense": -2}
-    private final String status; // Ej: toxic, taunt, encore, etc.
-    private final int duration; // en turnos, si aplica
 
-    public Effect(String type, String target, Map<String, Integer> statChanges, String status, int duration) {
-        this.type = type.toLowerCase();
-        this.target = target.toLowerCase();
+    public enum Type {
+        BUFF, DEBUFF, STATUS, FORCE_SWITCH, RESET_STATS, RESTRICTION
+        // WEATHER fue eliminado aquí
+    }
+
+    private Type type;
+    private Map<String, Integer> statChanges;
+    private String status;
+    private int duration;
+    private boolean stackable;
+    private boolean forceSwitch;
+
+    public Effect(Type type, Map<String, Integer> statChanges, String status, int duration,
+                  boolean stackable, boolean forceSwitch) {
+        this.type = type;
         this.statChanges = statChanges;
         this.status = status;
         this.duration = duration;
+        this.stackable = stackable;
+        this.forceSwitch = forceSwitch;
     }
 
-    public void apply(Pokemon user, Pokemon opponent) {
-        Pokemon targetPokemon = switch (target) {
-            case "self" -> user;
-            case "opponent" -> opponent;
-            default -> null;
-        };
+    public void apply(Pokemon user, Pokemon target) {
+        if (type == Type.BUFF || type == Type.DEBUFF) {
+            if (statChanges != null) {
+                for (String stat : statChanges.keySet()) {
+                    target.modifyStat(stat, statChanges.get(stat));
+                }
+            }
+        }
 
-        if (targetPokemon == null) return;
+        if (type == Type.STATUS && status != null) {
+            target.setStatus(status);
+        }
 
-        switch (type) {
-            case "statchange" -> {
-                if (statChanges != null) {
-                    for (Map.Entry<String, Integer> entry : statChanges.entrySet()) {
-                        targetPokemon.modifyStat(entry.getKey(), entry.getValue());
-                    }
-                }
-            }
-            case "status" -> {
-                if (status != null) {
-                    targetPokemon.setStatus(status);
-                }
-            }
-            case "climate" -> {
-                if (status != null) {
-                    Battle.setClimate(status, duration);
-                }
-            }
-            case "clearboosts" -> targetPokemon.resetBoosts();
-            case "substitute" -> targetPokemon.createSubstitute();
-            case "restriction" -> targetPokemon.applyRestriction(status, duration);
-            default -> {
-            }
+        if (type == Type.FORCE_SWITCH && forceSwitch) {
+            target.setForcedToSwitch(true);
+        }
+
+        if (type == Type.RESET_STATS) {
+            user.resetBoosts();
+            target.resetBoosts();
+        }
+
+        if (type == Type.RESTRICTION && status != null) {
+            target.applyRestriction(status, duration);
+        }
+
+        if (duration > 0 && (type == Type.STATUS || type == Type.RESTRICTION)) {
+            target.addEffect(this);
         }
     }
 
-
-    public String getType() {
-        return type;
-    }
-
-    public String getTarget() {
-        return target;
-    }
-
-    public Map<String, Integer> getStatChanges() {
-        return statChanges;
+    public int getDuration() {
+        return duration;
     }
 
     public String getStatus() {
         return status;
     }
 
-    public int getDuration() {
-        return duration;
+    public Map<String, Integer> getStatChanges() {
+        return statChanges;
+    }
+
+    public boolean isStackable() {
+        return stackable;
+    }
+
+    public Type getType() {
+        return type;
     }
 }
