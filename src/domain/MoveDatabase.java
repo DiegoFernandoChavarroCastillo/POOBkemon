@@ -49,7 +49,8 @@
             // forcejeo
             moves.put("STRUGGLE", new StruggleMove());;
 
-            //estadp
+            //estado
+            moves.put("SANDSTORM", new WeatherMove("SANDSTORM", "ROCK", 100, 10, 0, "sandstorm", 5));
 
 
             //pruebas

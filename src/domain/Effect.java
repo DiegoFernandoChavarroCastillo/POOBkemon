@@ -3,26 +3,22 @@ package domain;
 import java.util.Map;
 
 public class Effect {
-    public enum Type {
-        BUFF, DEBUFF, STATUS, WEATHER, FORCE_SWITCH, RESET_STATS, RESTRICTION
-    }
 
-    public enum Target {
-        USER, OPPONENT
+    public enum Type {
+        BUFF, DEBUFF, STATUS, FORCE_SWITCH, RESET_STATS, RESTRICTION
+        // WEATHER fue eliminado aquí
     }
 
     private Type type;
-    private Target target;
-    private Map<String, Integer> statChanges; // ej: {"attack": +1, "defense": -1}
-    private String status; // "burned", "poisoned", "toxic", "paralyzed", etc.
-    private int duration; // -1 si es permanente hasta curarse
+    private Map<String, Integer> statChanges;
+    private String status;
+    private int duration;
     private boolean stackable;
     private boolean forceSwitch;
 
-    public Effect(Type type, Target target, Map<String, Integer> statChanges, String status, int duration,
+    public Effect(Type type, Map<String, Integer> statChanges, String status, int duration,
                   boolean stackable, boolean forceSwitch) {
         this.type = type;
-        this.target = target;
         this.statChanges = statChanges;
         this.status = status;
         this.duration = duration;
@@ -30,42 +26,34 @@ public class Effect {
         this.forceSwitch = forceSwitch;
     }
 
-    public void apply(Pokemon user, Pokemon opponent) {
-        Pokemon affected = target == Target.USER ? user : opponent;
-
+    public void apply(Pokemon user, Pokemon target) {
         if (type == Type.BUFF || type == Type.DEBUFF) {
             if (statChanges != null) {
                 for (String stat : statChanges.keySet()) {
-                    affected.modifyStat(stat, statChanges.get(stat));
+                    target.modifyStat(stat, statChanges.get(stat));
                 }
             }
         }
 
         if (type == Type.STATUS && status != null) {
-            affected.setStatus(status);
+            target.setStatus(status);
         }
 
         if (type == Type.FORCE_SWITCH && forceSwitch) {
-            affected.setForcedToSwitch(true); // Debe implementarse este atributo
-        }
-
-        // Climas o efectos persistentes deberían manejarse en Battle o GameController
-        if (type == Type.WEATHER) {
-            user.getBattle().setWeather(status, duration); // método a definir en Battle si aún no existe
+            target.setForcedToSwitch(true);
         }
 
         if (type == Type.RESET_STATS) {
             user.resetBoosts();
-            opponent.resetBoosts();
+            target.resetBoosts();
         }
 
         if (type == Type.RESTRICTION && status != null) {
-            affected.applyRestriction(status, duration);
+            target.applyRestriction(status, duration);
         }
 
-        // Almacenamiento si el efecto es de duración
         if (duration > 0 && (type == Type.STATUS || type == Type.RESTRICTION)) {
-            affected.addEffect(this);
+            target.addEffect(this);
         }
     }
 
@@ -87,9 +75,5 @@ public class Effect {
 
     public Type getType() {
         return type;
-    }
-
-    public Target getTarget() {
-        return target;
     }
 }

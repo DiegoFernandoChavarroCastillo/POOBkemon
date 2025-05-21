@@ -21,8 +21,6 @@ public class Pokemon implements Cloneable, Serializable {
     private int accuracy;
     private int evasion;
     private List<Move> moves;
-    private String restriction;
-    private int restrictionDuration;
     private String status;
     private boolean hasSubstitute = false;
     private int maxHp;
@@ -242,6 +240,15 @@ public class Pokemon implements Cloneable, Serializable {
     }
 
     public void processStartOfTurnEffects() {
+
+        String climate = Battle.getClimate();
+        if ("sandstorm".equalsIgnoreCase(climate)) {
+            String type = this.getType().toUpperCase();
+            if (!type.equals("ROCK") && !type.equals("GROUND") && !type.equals("STEEL")) {
+                this.takeDamage(this.getMaxHp() / 16); // daño por turno
+            }
+        }
+
         Iterator<ActiveEffect> it = activeEffects.iterator();
         while (it.hasNext()) {
             ActiveEffect ae = it.next();
