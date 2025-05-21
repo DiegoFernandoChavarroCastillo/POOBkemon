@@ -327,9 +327,36 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         int spriteWidth = 200;
         int spriteHeight = 200;
 
+        // Determinar si este Pokémon pertenece al jugador actual
+        boolean isCurrentPlayerPokemon = false;
+        if (controller != null && controller.getCurrentBattle() != null) {
+            Trainer currentTrainer = controller.getCurrentTrainer();
+            Pokemon currentPokemon = controller.getCurrentBattle().getBattleState().getPlayer1Pokemon();
+            Pokemon enemyPokemon = controller.getCurrentBattle().getBattleState().getPlayer2Pokemon();
+
+            // Si el Pokémon pertenece al jugador actual, debe mostrarse de espaldas
+            if (label == pok1Label && currentTrainer == controller.getCurrentBattle().getPlayer1() ||
+                    label == pok2Label && currentTrainer == controller.getCurrentBattle().getPlayer2()) {
+                isCurrentPlayerPokemon = true;
+            }
+        }
+
+        // Añadir sufijo según perspectiva
+        String suffix = isCurrentPlayerPokemon ? "_back" : "_front";
+
         try {
+            // Primero intentar cargar con el sufijo específico
+            File file = new File(basePath + pokemonName + suffix + ".png");
+            if (file.exists()) {
+                BufferedImage originalImage = ImageIO.read(file);
+                Image scaledImage = originalImage.getScaledInstance(spriteWidth, spriteHeight, Image.SCALE_SMOOTH);
+                label.setIcon(new ImageIcon(scaledImage));
+                return;
+            }
+
+            // Si no se encuentra el archivo con sufijo, intentar con los formatos originales
             for (String ext : new String[]{".png", ".jpg", ".gif"}) {
-                File file = new File(basePath + pokemonName + ext);
+                file = new File(basePath + pokemonName + ext);
                 if (file.exists()) {
                     BufferedImage originalImage = ImageIO.read(file);
                     Image scaledImage = originalImage.getScaledInstance(spriteWidth, spriteHeight, Image.SCALE_SMOOTH);
@@ -337,6 +364,8 @@ public class BattleGUI extends JFrame implements BattleEventListener {
                     return;
                 }
             }
+
+            // Si no se encuentra ninguna imagen, mostrar el nombre
             label.setIcon(null);
             label.setText(pokemonName);
             label.setFont(pokemonFont);
@@ -515,7 +544,7 @@ public class BattleGUI extends JFrame implements BattleEventListener {
             Move move = moves.get(i);
             JButton moveButton = createBattleButton(
                     move.name() + " (PP: " + move.pp() + "/" + move.maxPP() + ")",
-                    new Color(200, 120, 200)); // Morado Pokémon
+                    new Color(200, 120, 200)); 
 
             final int moveIndex = i;
             moveButton.addActionListener(e -> controller.executeAttack(moveIndex));
@@ -621,6 +650,9 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     public BattleLogPanel getBattleLogPanel(){
         return logPanel;
     }
+
+
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

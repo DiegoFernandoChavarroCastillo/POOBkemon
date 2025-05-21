@@ -414,7 +414,7 @@ public class GameController {
      * Se utiliza un pequeño retardo entre turnos para simular tiempo de juego.
      */
     private void executeCpuTurn() {
-        Timer timer = new Timer(1000, e -> {
+        SwingUtilities.invokeLater(() -> {
             if (!currentBattle.isFinished()) {
                 currentBattle.executeCpuTurn();
                 updateUI();
@@ -424,7 +424,10 @@ public class GameController {
                     updateUI();
 
                     if (currentBattle.getCurrentPlayer().isCPU()) {
-                        new Timer(1000, ev -> executeCpuTurn()).start();
+
+                        Timer timer = new Timer(1000, e -> executeCpuTurn());
+                        timer.setRepeats(false);
+                        timer.start();
                     } else {
                         gui.showMainOptions();
                     }
@@ -433,8 +436,6 @@ public class GameController {
                 }
             }
         });
-        timer.setRepeats(false);
-        timer.start();
     }
 
     /**
@@ -508,24 +509,7 @@ public class GameController {
         moveGUI.setVisible(true);
     }
 
-    /**
-     * Asigna un equipo aleatorio de Pokémon con movimientos aleatorios a un entrenador CPU.
-     *
-     * @param cpu        entrenador CPU
-     * @param onComplete acción a ejecutar al finalizar la asignación
-     */
-    private void selectPokemonForCPU(Trainer cpu, Runnable onComplete) {
-        List<String> available = new ArrayList<>(PokemonDataBase.getAvailablePokemonNames());
-        Collections.shuffle(available);
 
-        int count = Math.min(6, available.size());
-        for (int i = 0; i < count; i++) {
-            Pokemon pokemon = PokemonDataBase.getPokemon(available.get(i));
-            selectRandomMoves(pokemon);
-            cpu.addPokemonToTeam(pokemon);
-        }
-        onComplete.run();
-    }
 
     /**
      * Asigna movimientos aleatorios a un Pokémon.
@@ -550,6 +534,7 @@ public class GameController {
             onComplete.run();
         });
     }
+
 
     /**
      * Asigna ítems aleatorios al entrenador CPU.
@@ -625,5 +610,9 @@ public class GameController {
     public void loadGameState(GameState gameState) {
         this.currentBattle = gameState.getBattle();
         this.gui.setGameMode(gameState.getGameMode());
+    }
+
+    public Trainer getCurrentTrainer(){
+    return currentBattle.getCurrentPlayer();
     }
 }

@@ -86,7 +86,7 @@ public class PokemonSelectionGUI extends JDialog {
         panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 
         try {
-            ImageIcon icon = new ImageIcon("src/sprites/" + pokemon.getName().toLowerCase() + ".png");
+            ImageIcon icon = new ImageIcon("src/sprites/" + pokemon.getName().toLowerCase() + "_front.png");
             Image scaledImage = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
             JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
             panel.add(imageLabel, BorderLayout.CENTER);
