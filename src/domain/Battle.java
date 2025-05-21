@@ -199,6 +199,7 @@ public class Battle implements Serializable {
      * Procesa acciones posteriores a un turno: verificar desmayos y actualizar clima.
      */
     private void postAction() {
+        processTurnStartEffects();
         checkFaintedPokemon();
         updateClimate();
     }
@@ -235,4 +236,15 @@ public class Battle implements Serializable {
             }
         }
     }
+
+    public void processTurnStartEffects() {
+        Trainer[] players = new Trainer[]{player1, player2};
+        for (Trainer player : players) {
+            Pokemon active = player.getTeam().getActivePokemon();
+            if (active != null && active.getHp() > 0) {
+                active.processStartOfTurnEffects();
+            }
+        }
+    }
+
 }

@@ -1,6 +1,5 @@
 package domain;
 
 public enum EffectType {
-    STAT_UP,
-    EVASION_UP
+    BUFF, DEBUFF, STATUS, WEATHER, FORCE_SWITCH, RESET_STATS, RESTRICTION
 }

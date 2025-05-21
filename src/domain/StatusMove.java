@@ -1,26 +1,40 @@
 package domain;
 
-public class StatusMove extends Move {
-    private String name;
-    private String type;
-    private int pp;
-    private Effect effect;
+import java.io.Serializable;
+import java.util.Random;
 
-    public StatusMove(String name, String type, int pp, Effect effect) {
+/**
+ * Representa un movimiento de estado que aplica un efecto sin causar daño directo.
+ */
+public class StatusMove extends Move implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final String name;
+    private final String type;
+    private final int precision;
+    private final int maxPP;
+    private final int priority;
+    private int currentPP;
+    private final Effect effect;
+
+    /**
+     * Crea un nuevo movimiento de estado con los parámetros especificados.
+     *
+     * @param name       nombre del movimiento
+     * @param type       tipo del movimiento
+     * @param precision  precisión del movimiento (0–100)
+     * @param maxPP      puntos de poder máximos
+     * @param priority   prioridad del movimiento
+     * @param effect     efecto que se aplicará al usarse
+     */
+    public StatusMove(String name, String type, int precision, int maxPP, int priority, Effect effect) {
         this.name = name;
         this.type = type;
-        this.pp = pp;
+        this.precision = precision;
+        this.maxPP = maxPP;
+        this.priority = priority;
         this.effect = effect;
-    }
-
-    public Effect getEffect() {
-        return effect;
-    }
-
-    public void apply(Pokemon user, Pokemon target) {
-        if (effect != null) {
-            effect.apply(user, target);
-        }
+        this.currentPP = maxPP;
     }
 
     @Override
@@ -35,31 +49,46 @@ public class StatusMove extends Move {
 
     @Override
     public int power() {
-        return 0; // Status moves typically have no power
+        return 0; // No causa daño directo
     }
 
     @Override
     public int precision() {
-        return 100; // Default accuracy unless specified
-    }
-
-    @Override
-    public int maxPP() {
-        return pp;
-    }
-
-    @Override
-    public int priority() {
-        return 0;
-    }
-
-    @Override
-    public void use(Pokemon user, Pokemon target) {
-        if (pp > 0) pp--;
+        return precision;
     }
 
     @Override
     public int pp() {
-        return pp;
+        return currentPP;
+    }
+
+    @Override
+    public int maxPP() {
+        return maxPP;
+    }
+
+    @Override
+    public int priority() {
+        return priority;
+    }
+
+    @Override
+    public void use(Pokemon user, Pokemon target) {
+        if (currentPP <= 0 || target == null) return;
+
+        Random rand = new Random();
+        if (rand.nextInt(100) < precision) {
+            effect.apply(user, target);
+        }
+
+        currentPP--;
+    }
+
+    public void setPP(int newPP) {
+        this.currentPP = Math.max(0, Math.min(maxPP, newPP));
+    }
+
+    public Effect getEffect() {
+        return effect;
     }
 }

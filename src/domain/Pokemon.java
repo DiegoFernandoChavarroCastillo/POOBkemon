@@ -1,10 +1,7 @@
 package domain;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Representa un Pokémon con estadísticas, movimientos y estado de batalla.
@@ -32,6 +29,10 @@ public class Pokemon implements Cloneable, Serializable {
     private Map<String, Integer> statBoosts = new HashMap<>();
     private int evasionStage = 0;
     private static final int LEVEL = 100;
+    private List<ActiveEffect> activeEffects = new ArrayList<>();
+    private boolean forcedToSwitch = false;
+    private String restriction = null; // para Taunt, Encore, etc.
+    private int restrictionDuration = 0;
 
     /**
      * Crea un nuevo Pokémon con sus atributos básicos y lista de movimientos.
@@ -171,16 +172,6 @@ public class Pokemon implements Cloneable, Serializable {
         statBoosts.put(stat, current + amount);
     }
 
-    /**
-     * Aplica una restricción al Pokémon por cierta cantidad de turnos.
-     *
-     * @param restriction tipo de restricción (ej. taunt)
-     * @param duration    duración en turnos
-     */
-    public void applyRestriction(String restriction, int duration) {
-        this.restriction = restriction.toLowerCase();
-        this.restrictionDuration = duration;
-    }
 
     /**
      * Actualiza la duración de la restricción al final del turno.
@@ -193,20 +184,6 @@ public class Pokemon implements Cloneable, Serializable {
                 restriction = null;
             }
         }
-    }
-
-    /**
-     * @return true si el Pokémon tiene una restricción activa
-     */
-    public boolean isRestricted() {
-        return restriction != null;
-    }
-
-    /**
-     * @return tipo de restricción activa, o null si no hay
-     */
-    public String getRestriction() {
-        return restriction;
     }
 
     /**
@@ -260,6 +237,60 @@ public class Pokemon implements Cloneable, Serializable {
         return false;
     }
 
+    public void addEffect(Effect effect) {
+        activeEffects.add(new ActiveEffect(effect));
+    }
+
+    public void processStartOfTurnEffects() {
+        Iterator<ActiveEffect> it = activeEffects.iterator();
+        while (it.hasNext()) {
+            ActiveEffect ae = it.next();
+            Effect e = ae.getEffect();
+
+            if (e.getType() == Effect.Type.STATUS && "toxic".equals(status)) {
+                // Daño escalonado: 1/16 * turno actual
+                int toxicTurn = e.getDuration() - ae.getRemainingTurns() + 1;
+                int damage = getMaxHp() / 16 * toxicTurn;
+                takeDamage(damage);
+            } else if ("burned".equals(status)) {
+                takeDamage(getMaxHp() / 8);
+            } else if ("cursed".equals(status)) {
+                takeDamage(getMaxHp() / 4);
+            }
+
+            ae.tick();
+            if (ae.isExpired()) it.remove();
+        }
+
+        if (restrictionDuration > 0) {
+            restrictionDuration--;
+            if (restrictionDuration == 0) restriction = null;
+        }
+
+        forcedToSwitch = false; // reseteamos después de procesar
+    }
+
+    public void applyRestriction(String restriction, int duration) {
+        this.restriction = restriction;
+        this.restrictionDuration = duration;
+    }
+
+    public boolean isRestricted() {
+        return restriction != null;
+    }
+
+    public String getRestriction() {
+        return restriction;
+    }
+
+    public void setForcedToSwitch(boolean forced) {
+        this.forcedToSwitch = forced;
+    }
+
+    public boolean mustSwitch() {
+        return forcedToSwitch;
+    }
+
     // Getters
 
     public String getName() { return name; }
@@ -274,6 +305,7 @@ public class Pokemon implements Cloneable, Serializable {
     public int getAccuracy() { return accuracy; }
     public int getEvasion() { return evasion; }
     public List<Move> getMoves() { return moves; }
+
     public void increaseEvasionStage() {
         if (evasionStage < 6) {
             evasionStage++;
@@ -293,4 +325,32 @@ public class Pokemon implements Cloneable, Serializable {
             return 3.0 / (3.0 - stage);
         }
     }
+
+
+    public class ActiveEffect {
+        private final Effect effect;
+        private int remainingTurns;
+
+        public ActiveEffect(Effect effect) {
+            this.effect = effect;
+            this.remainingTurns = effect.getDuration();
+        }
+
+        public Effect getEffect() {
+            return effect;
+        }
+
+        public int getRemainingTurns() {
+            return remainingTurns;
+        }
+
+        public void tick() {
+            remainingTurns--;
+        }
+
+        public boolean isExpired() {
+            return remainingTurns <= 0;
+        }
+    }
+
 }
