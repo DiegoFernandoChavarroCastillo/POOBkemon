@@ -51,6 +51,14 @@
 
             //estado
             moves.put("SANDSTORM", new WeatherMove("SANDSTORM", "ROCK", 100, 10, 0, "sandstorm", 5));
+            moves.put("TOXIC", new StatusMove("TOXIC", "POISON", 90, 10, 0, new Effect(
+                    EffectType.STATUS,
+                    null,
+                    "toxic",
+                    999,
+                    false,
+                    false
+            )));
 
 
             //pruebas

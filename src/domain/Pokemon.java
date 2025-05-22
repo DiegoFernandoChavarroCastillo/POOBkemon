@@ -236,6 +236,11 @@ public class Pokemon implements Cloneable, Serializable {
     }
 
     public void addEffect(Effect effect) {
+        for (ActiveEffect ae : activeEffects) {
+            if ("toxic".equalsIgnoreCase(ae.getEffect().getStatus())) {
+                return; // ya existe efecto toxic activo
+            }
+        }
         activeEffects.add(new ActiveEffect(effect));
     }
 
@@ -254,18 +259,21 @@ public class Pokemon implements Cloneable, Serializable {
             ActiveEffect ae = it.next();
             Effect e = ae.getEffect();
 
-            if (e.getType() == Effect.Type.STATUS && "toxic".equals(status)) {
-                // Daño escalonado: 1/16 * turno actual
-                int toxicTurn = e.getDuration() - ae.getRemainingTurns() + 1;
+            if (e.getEffectType() == EffectType.STATUS && "toxic".equals(status)) {
+                int toxicTurn = ae.getTurnsApplied();
+                if (toxicTurn < 1) toxicTurn = 1; // seguridad
                 int damage = getMaxHp() / 16 * toxicTurn;
                 takeDamage(damage);
-            } else if ("burned".equals(status)) {
+            }
+            else if ("burned".equals(status)) {
                 takeDamage(getMaxHp() / 8);
             } else if ("cursed".equals(status)) {
                 takeDamage(getMaxHp() / 4);
             }
-
+            System.out.println("🔁 Antes de tick → turnosAplicados: " + ae.getTurnsApplied());
             ae.tick();
+            System.out.println("🔁 Después de tick → turnosAplicados: " + ae.getTurnsApplied());
+
             if (ae.isExpired()) it.remove();
         }
 
@@ -337,6 +345,7 @@ public class Pokemon implements Cloneable, Serializable {
     public class ActiveEffect {
         private final Effect effect;
         private int remainingTurns;
+        private int turnsApplied = 0;
 
         public ActiveEffect(Effect effect) {
             this.effect = effect;
@@ -352,11 +361,16 @@ public class Pokemon implements Cloneable, Serializable {
         }
 
         public void tick() {
-            remainingTurns--;
+            turnsApplied++; // <- importante
+            if (remainingTurns > 0) remainingTurns--;
         }
 
         public boolean isExpired() {
             return remainingTurns <= 0;
+        }
+
+        public int getTurnsApplied() {
+            return turnsApplied;
         }
     }
 

@@ -9,16 +9,16 @@ public class Effect {
         // WEATHER fue eliminado aquí
     }
 
-    private Type type;
+    private EffectType effectType;
     private Map<String, Integer> statChanges;
     private String status;
     private int duration;
     private boolean stackable;
     private boolean forceSwitch;
 
-    public Effect(Type type, Map<String, Integer> statChanges, String status, int duration,
+    public Effect(EffectType effectType, Map<String, Integer> statChanges, String status, int duration,
                   boolean stackable, boolean forceSwitch) {
-        this.type = type;
+        this.effectType = effectType;
         this.statChanges = statChanges;
         this.status = status;
         this.duration = duration;
@@ -26,36 +26,42 @@ public class Effect {
         this.forceSwitch = forceSwitch;
     }
 
-    public void apply(Pokemon user, Pokemon target) {
-        if (type == Type.BUFF || type == Type.DEBUFF) {
-            if (statChanges != null) {
-                for (String stat : statChanges.keySet()) {
-                    target.modifyStat(stat, statChanges.get(stat));
+        public void apply(Pokemon user, Pokemon target) {
+            if (effectType == EffectType.BUFF || effectType == EffectType.DEBUFF) {
+                if (statChanges != null) {
+                    for (String stat : statChanges.keySet()) {
+                        target.modifyStat(stat, statChanges.get(stat));
+                    }
                 }
             }
-        }
 
-        if (type == Type.STATUS && status != null) {
-            target.setStatus(status);
-        }
+            if (effectType == EffectType.STATUS && status != null) {
+                target.setStatus(status);
+            }
 
-        if (type == Type.FORCE_SWITCH && forceSwitch) {
+        if (effectType == EffectType.FORCE_SWITCH && forceSwitch) {
             target.setForcedToSwitch(true);
         }
 
-        if (type == Type.RESET_STATS) {
+        if (effectType == EffectType.RESET_STATS) {
             user.resetBoosts();
             target.resetBoosts();
         }
 
-        if (type == Type.RESTRICTION && status != null) {
+        if (effectType == EffectType.RESTRICTION && status != null) {
             target.applyRestriction(status, duration);
         }
 
-        if (duration > 0 && (type == Type.STATUS || type == Type.RESTRICTION)) {
+        if (duration > 0 && (effectType == EffectType.STATUS || effectType == EffectType.RESTRICTION)) {
             target.addEffect(this);
         }
-    }
+
+        if ((duration > 0 || "toxic".equals(status)) && effectType == EffectType.STATUS) {
+            target.addEffect(this);
+        }
+
+
+        }
 
     public int getDuration() {
         return duration;
@@ -73,7 +79,7 @@ public class Effect {
         return stackable;
     }
 
-    public Type getType() {
-        return type;
+    public EffectType getEffectType() {
+        return effectType;
     }
 }

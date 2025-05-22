@@ -62,6 +62,7 @@ public class Battle implements Serializable {
             throw new IllegalStateException("No se pueden ejecutar acciones manuales para una CPU");
         }
 
+        processTurnStartEffects();
         executeAction(current, action);
         postAction();
     }
@@ -71,6 +72,7 @@ public class Battle implements Serializable {
      */
     public void executeCpuTurn() {
         if (!battleEnded && getCurrentPlayer().isCPU()) {
+            processTurnStartEffects();
             CPUTrainer cpu = (CPUTrainer) getCurrentPlayer();
             Action action = cpu.decideAction(this);
             executeAction(cpu, action);
@@ -199,7 +201,6 @@ public class Battle implements Serializable {
      * Procesa acciones posteriores a un turno: verificar desmayos y actualizar clima.
      */
     private void postAction() {
-        processTurnStartEffects();
         checkFaintedPokemon();
         updateClimate();
     }
