@@ -169,6 +169,7 @@ public class Pokemon implements Cloneable, Serializable {
         statBoosts.put(stat, statBoosts.getOrDefault(stat, 0) + amount);
         getEffectiveStat("attack");
         getEffectiveStat("defense");
+        getEffectiveStat("speed");
 
     }
 
