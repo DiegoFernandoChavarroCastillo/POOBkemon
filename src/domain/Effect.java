@@ -4,43 +4,41 @@ import java.util.Map;
 
 public class Effect {
 
-    public enum Type {
-        BUFF, DEBUFF, STATUS, FORCE_SWITCH, RESET_STATS, RESTRICTION
-        // WEATHER fue eliminado aquí
-    }
-
     private EffectType effectType;
     private Map<String, Integer> statChanges;
     private String status;
     private int duration;
     private boolean stackable;
     private boolean forceSwitch;
+    private Target target;
 
-    public Effect(EffectType effectType, Map<String, Integer> statChanges, String status, int duration,
+
+    public Effect(EffectType effectType,Target target, Map<String, Integer> statChanges, String status, int duration,
                   boolean stackable, boolean forceSwitch) {
         this.effectType = effectType;
         this.statChanges = statChanges;
+        this.target = target;
         this.status = status;
         this.duration = duration;
         this.stackable = stackable;
         this.forceSwitch = forceSwitch;
     }
 
-        public void apply(Pokemon user, Pokemon target) {
-            if (effectType == EffectType.BUFF || effectType == EffectType.DEBUFF) {
-                if (statChanges != null) {
-                    for (String stat : statChanges.keySet()) {
-                        target.modifyStat(stat, statChanges.get(stat));
-                    }
-                }
-            }
+    public void apply(Pokemon user, Pokemon target) {
+        Pokemon affected = (this.target == Target.USER) ? user : target;
 
-            if (effectType == EffectType.STATUS && status != null) {
-                target.setStatus(status);
+        if ((effectType == EffectType.BUFF || effectType == EffectType.DEBUFF) && statChanges != null) {
+            for (Map.Entry<String, Integer> entry : statChanges.entrySet()) {
+                affected.modifyStat(entry.getKey(), entry.getValue());
             }
+        }
+
+        if (effectType == EffectType.STATUS && status != null) {
+            affected.setStatus(status);
+        }
 
         if (effectType == EffectType.FORCE_SWITCH && forceSwitch) {
-            target.setForcedToSwitch(true);
+            affected.setForcedToSwitch(true);
         }
 
         if (effectType == EffectType.RESET_STATS) {
@@ -49,19 +47,20 @@ public class Effect {
         }
 
         if (effectType == EffectType.RESTRICTION && status != null) {
-            target.applyRestriction(status, duration);
+            affected.applyRestriction(status, duration);
         }
 
+        // Guardar el efecto si es de duración (STATUS o RESTRICTION)
         if (duration > 0 && (effectType == EffectType.STATUS || effectType == EffectType.RESTRICTION)) {
-            target.addEffect(this);
+            affected.addEffect(this);
         }
 
-        if ((duration > 0 || "toxic".equals(status)) && effectType == EffectType.STATUS) {
-            target.addEffect(this);
+        // Caso especial: toxic tiene duración -1 pero debe guardarse
+        if ("toxic".equalsIgnoreCase(status) && effectType == EffectType.STATUS) {
+            affected.addEffect(this);
         }
+    }
 
-
-        }
 
     public int getDuration() {
         return duration;

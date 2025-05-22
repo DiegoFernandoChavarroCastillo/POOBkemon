@@ -53,12 +53,27 @@
             moves.put("SANDSTORM", new WeatherMove("SANDSTORM", "ROCK", 100, 10, 0, "sandstorm", 5));
             moves.put("TOXIC", new StatusMove("TOXIC", "POISON", 90, 10, 0, new Effect(
                     EffectType.STATUS,
+                    Target.OPPONENT,
                     null,
                     "toxic",
                     999,
                     false,
                     false
             )));
+            moves.put("BULK UP", new StatusMove("BULK UP", "FIGHTING", 100, 20, 0, new Effect(
+                    EffectType.BUFF,
+                    Target.USER,
+                    new HashMap<String, Integer>() {{
+                        put("attack", 1);
+                        put("defense", 1);
+                    }},
+                    null,
+                    999,
+                    true,
+                    false
+            )));
+
+
 
 
             //pruebas
