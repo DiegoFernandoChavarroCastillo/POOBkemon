@@ -71,12 +71,11 @@ public class Effect implements Serializable {
             affected.applyRestriction(status, duration);
         }
 
-        // Guardar el efecto si tiene duración y es relevante
+
         if (duration > 0 && (effectType == EffectType.STATUS || effectType == EffectType.RESTRICTION)) {
             affected.addEffect(this);
         }
 
-        // Caso especial: "toxic" debe guardarse incluso con duración -1
         if ("toxic".equalsIgnoreCase(status) && effectType == EffectType.STATUS) {
             affected.addEffect(this);
         }

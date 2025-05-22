@@ -17,7 +17,7 @@ import java.util.List;
  * Autores: Diego Chavarro, Diego Rodríguez
  */
 public class BattleGUI extends JFrame implements BattleEventListener {
-    private JPanel panelSuperior, panelInferior, panelPok1, panelPok2, panelImagenes;
+    private JPanel panelInferior, panelPok1, panelPok2;
     private JLabel labelInfo1, labelInfo2, infoLabel;
     private JProgressBar hpBar1, hpBar2;
     private JButton btnAtacar, btnCambiar, btnItem, btnHuir;
@@ -29,6 +29,8 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     private int gameMode;
     private BattleLogPanel logPanel;
     private Font pokemonFont;
+    private boolean isPaused = false;
+    private JPanel pauseOverlay;
 
     /**
      * Construye una nueva instancia de BattleGUI que inicializa la ventana del menú principal.
@@ -40,7 +42,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        // Cargar fuente Pokémon
         try {
             pokemonFont = Font.createFont(Font.TRUETYPE_FONT, new File("src/sprites/pokemon_font.ttf")).deriveFont(12f);
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -78,6 +79,17 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         fileMenu.add(saveItem);
         fileMenu.add(loadItem);
         menuBar.add(fileMenu);
+
+        JMenu pauseMenu = new JMenu("Pausa");
+        pauseMenu.setForeground(Color.WHITE);
+        pauseMenu.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
+
+        JMenuItem pauseItem = new JMenuItem("Pausar/Reanudar");
+        pauseItem.setFont(pokemonFont);
+        pauseItem.addActionListener(e -> togglePause());
+
+        pauseMenu.add(pauseItem);
+        menuBar.add(pauseMenu);
 
         setJMenuBar(menuBar);
     }
@@ -250,22 +262,18 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     }
 
     public void updateBattleInfo(BattleState state) {
-        // Determinar qué Pokémon está activo (con turno) y cuál es el oponente
         boolean isPlayer1Turn = state.isPlayer1Turn();
         Pokemon player1Pokemon = state.getPlayer1Pokemon();
         Pokemon player2Pokemon = state.getPlayer2Pokemon();
         String player1Name = state.getPlayer1Name();
         String player2Name = state.getPlayer2Name();
 
-        // Actualizar la información de los Pokémon en sus respectivos paneles (siempre mismas posiciones)
         updatePokemonInfo(player1Pokemon, labelInfo1, hpBar1, panelPok1);
         updatePokemonInfo(player2Pokemon, labelInfo2, hpBar2, panelPok2);
 
-        // Cargar los sprites (siempre mismas posiciones)
         loadPokemonSprite(pok1Label, player1Pokemon.getName().toLowerCase(), true);  // Player 1 (back view)
         loadPokemonSprite(pok2Label, player2Pokemon.getName().toLowerCase(), false); // Player 2 (front view)
 
-        // Resaltar el panel del Pokémon activo según el turno
         if (isPlayer1Turn) {
             panelPok1.setBorder(BorderFactory.createLineBorder(new Color(200, 0, 0), 3));
             panelPok2.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
@@ -339,11 +347,9 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         int spriteWidth = 150;
         int spriteHeight = 150;
 
-        // Añadir sufijo según perspectiva
         String suffix = isBackView ? "_back" : "_front";
 
         try {
-            // Intentar cargar con sufijo específico
             File file = new File(basePath + pokemonName + suffix + ".png");
             if (file.exists()) {
                 BufferedImage originalImage = ImageIO.read(file);
@@ -352,7 +358,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
                 return;
             }
 
-            // Intentar sin sufijo
             file = new File(basePath + pokemonName + ".png");
             if (file.exists()) {
                 BufferedImage originalImage = ImageIO.read(file);
@@ -361,7 +366,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
                 return;
             }
 
-            // Si no se encuentra, probar otros formatos
             for (String ext : new String[]{".jpg", ".gif"}) {
                 file = new File(basePath + pokemonName + ext);
                 if (file.exists()) {
@@ -372,7 +376,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
                 }
             }
 
-            // Si no se encuentra ninguna imagen, mostrar el nombre
             label.setIcon(null);
             label.setText(pokemonName);
             label.setHorizontalAlignment(JLabel.CENTER);
@@ -391,18 +394,16 @@ public class BattleGUI extends JFrame implements BattleEventListener {
 
 
     private void prepareElements() {
-        // Panel principal con fondo azul como en Pokémon Esmeralda
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(new Color(120, 184, 232)); // Azul cielo Pokémon
+        mainPanel.setBackground(new Color(120, 184, 232));
 
-        // Panel de batalla que contendrá los sprites de Pokémon con fondo personalizado
-        JPanel battlePanel = new BackgroundPanel(); // Usar el panel personalizado con fondo
 
-        // Paneles de información de los Pokémon
+        JPanel battlePanel = new BackgroundPanel();
+
         panelPok1 = new JPanel(new BorderLayout());
-        panelPok1.setBackground(new Color(255, 255, 200)); // Amarillo claro Pokémon
+        panelPok1.setBackground(new Color(255, 255, 200));
         panelPok1.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-        panelPok1.setBounds(20, 20, 250, 80); // Posición en la esquina superior izquierda
+        panelPok1.setBounds(20, 20, 250, 80);
 
         labelInfo1 = new JLabel("", JLabel.CENTER);
         labelInfo1.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
@@ -418,9 +419,9 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelPok1.add(hpBar1, BorderLayout.SOUTH);
 
         panelPok2 = new JPanel(new BorderLayout());
-        panelPok2.setBackground(new Color(255, 255, 200)); // Amarillo claro Pokémon
+        panelPok2.setBackground(new Color(255, 255, 200));
         panelPok2.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-        panelPok2.setBounds(530, 20, 250, 80); // Posición en la esquina superior derecha
+        panelPok2.setBounds(530, 20, 250, 80);
 
         labelInfo2 = new JLabel("", JLabel.CENTER);
         labelInfo2.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
@@ -435,25 +436,22 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelPok2.add(labelInfo2, BorderLayout.NORTH);
         panelPok2.add(hpBar2, BorderLayout.SOUTH);
 
-        // Etiquetas para los sprites de Pokémon con posicionamiento estilo Esmeralda
+
         pok1Label = new JLabel("", JLabel.CENTER);
-        pok1Label.setBounds(80, 220, 200, 200); // Pokémon activo en la parte inferior izquierda
+        pok1Label.setBounds(80, 220, 200, 200);
 
         pok2Label = new JLabel("", JLabel.CENTER);
-        pok2Label.setBounds(500, 90, 200, 200); // Pokémon rival en la parte superior derecha
+        pok2Label.setBounds(500, 90, 200, 200);
 
-        // Agregar componentes al panel de batalla
         battlePanel.add(panelPok1);
         battlePanel.add(panelPok2);
         battlePanel.add(pok1Label);
         battlePanel.add(pok2Label);
 
-        // Panel inferior con opciones
         panelInferior = new JPanel(new BorderLayout());
         panelInferior.setBackground(new Color(200, 224, 248)); // Azul claro Pokémon
         panelInferior.setBorder(BorderFactory.createLineBorder(new Color(64, 120, 192), 3));
 
-        // Panel de información
         JPanel panelInfo = new JPanel();
         panelInfo.setPreferredSize(new Dimension(300, 100));
         panelInfo.setBackground(new Color(255, 255, 200)); // Amarillo claro Pokémon
@@ -467,7 +465,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         turnTimerLabel.setFont(pokemonFont.deriveFont(Font.BOLD, 16));
         panelInfo.add(turnTimerLabel);
 
-        // Panel de opciones principales
         cardLayout = new CardLayout();
         panelOpciones = new JPanel(cardLayout);
         panelOpciones.setPreferredSize(new Dimension(450, 110)); // Fijar tamaño del panel de opciones
@@ -491,14 +488,12 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelOpciones.add(mainOptionsPanel, "main");
         panelOpciones.add(attackOptionsPanel, "attacks");
 
-        // Panel de registro de batalla
         logPanel = new BattleLogPanel();
         logPanel.setPreferredSize(new Dimension(getWidth(), 50));
         logPanel.setBackground(new Color(64, 120, 192)); // Azul oscuro Pokémon
         logPanel.setForeground(Color.WHITE);
         logPanel.setFont(pokemonFont.deriveFont(14f));
 
-        // Añadir componentes al panel principal
         panelInferior.add(panelInfo, BorderLayout.WEST);
         panelInferior.add(panelOpciones, BorderLayout.CENTER);
 
@@ -548,8 +543,8 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
         attackPanel.removeAll();
 
-        // Usar un GridLayout fijo con mismo tamaño que el panel principal
-        int rows = Math.min(5, moves.size() + 1); // máximo 4 movimientos + botón cancelar
+
+        int rows = Math.min(5, moves.size() + 1);
         attackPanel.setLayout(new GridLayout(rows, 1, 5, 5));
 
         for (int i = 0; i < moves.size(); i++) {
@@ -573,7 +568,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         cancelButton.addActionListener(e -> cardLayout.show(panelOpciones, "main"));
         attackPanel.add(cancelButton);
 
-        // Asegurar que el panel mantiene un tamaño consistente
         attackPanel.setPreferredSize(new Dimension(450, 150));
 
         cardLayout.show(panelOpciones, "attacks");
@@ -669,7 +663,7 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         private BufferedImage backgroundImage;
 
         public BackgroundPanel() {
-            setLayout(null); // Usamos posicionamiento absoluto para el estilo Esmeralda
+            setLayout(null);
             loadBackgroundImage();
         }
 
@@ -686,17 +680,86 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (backgroundImage != null) {
-                // Escalar la imagen para que cubra todo el panel
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
                 g2d.dispose();
             } else {
-                // Si no se puede cargar la imagen, usar el color de fondo por defecto
                 g.setColor(new Color(120, 184, 232));
                 g.fillRect(0, 0, getWidth(), getHeight());
             }
         }
+    }
+
+    private void togglePause() {
+        if (controller == null || controller.getCurrentBattle() == null) {
+            JOptionPane.showMessageDialog(this, "No hay batalla en curso para pausar");
+            return;
+        }
+
+        if (isPaused) {
+            resumeGame();
+        } else {
+            pauseGame();
+        }
+    }
+
+    private void pauseGame() {
+        isPaused = true;
+
+
+        controller.pauseTimer();
+
+
+        pauseOverlay = new JPanel();
+        pauseOverlay.setBackground(new Color(0, 0, 0, 150));
+        pauseOverlay.setLayout(new BorderLayout());
+
+        JLabel pauseLabel = new JLabel("JUEGO PAUSADO", JLabel.CENTER);
+        pauseLabel.setFont(pokemonFont.deriveFont(Font.BOLD, 48));
+        pauseLabel.setForeground(Color.WHITE);
+
+        JLabel instructionLabel = new JLabel("Presiona 'Pausa' en el menú para continuar", JLabel.CENTER);
+        instructionLabel.setFont(pokemonFont.deriveFont(Font.PLAIN, 16));
+        instructionLabel.setForeground(Color.LIGHT_GRAY);
+
+        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 0, 20));
+        centerPanel.setOpaque(false);
+        centerPanel.add(pauseLabel);
+        centerPanel.add(instructionLabel);
+
+        pauseOverlay.add(centerPanel, BorderLayout.CENTER);
+
+        setGlassPane(pauseOverlay);
+        pauseOverlay.setVisible(true);
+
+        setButtonsEnabled(false);
+    }
+
+    private void resumeGame() {
+        isPaused = false;
+
+        if (pauseOverlay != null) {
+            pauseOverlay.setVisible(false);
+        }
+
+        controller.resumeTimer();
+
+        setButtonsEnabled(true);
+    }
+
+    private void setButtonsEnabled(boolean enabled) {
+        if (controller != null && controller.getCurrentBattle() != null) {
+            boolean isHumanTurn = !controller.getCurrentBattle().getCurrentPlayer().isCPU();
+            if (btnAtacar != null) btnAtacar.setEnabled(enabled && isHumanTurn);
+            if (btnCambiar != null) btnCambiar.setEnabled(enabled && isHumanTurn);
+            if (btnItem != null) btnItem.setEnabled(enabled && isHumanTurn);
+            if (btnHuir != null) btnHuir.setEnabled(enabled && isHumanTurn);
+        }
+    }
+
+    public boolean isPaused() {
+        return isPaused;
     }
 
 

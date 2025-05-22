@@ -12,7 +12,6 @@ public class PersistenceManager {
     public static final String SAVE_FOLDER = "saves/";
 
     static {
-        // Crear la carpeta de guardados si no existe
         new File(SAVE_FOLDER).mkdirs();
     }
 

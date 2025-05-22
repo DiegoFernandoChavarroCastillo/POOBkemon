@@ -22,6 +22,7 @@ public class GameController implements Serializable {
     public static final int MODO_SUPERVIVENCIA = 1;
     private static final long serialVersionUID = 1L;
     private BattleEventListener eventListener;
+    private boolean isTimerPaused = false;
 
     /**
      * Crea un nuevo controlador del juego con la interfaz de usuario dada.
@@ -536,6 +537,20 @@ public class GameController implements Serializable {
      */
     private void executeCpuTurn() {
         SwingUtilities.invokeLater(() -> {
+            // Verificar si el juego está pausado
+            if (gui.isPaused()) {
+                // Retrasar la ejecución hasta que se reanude
+                Timer pauseCheck = new Timer(100, null);
+                pauseCheck.addActionListener(e -> {
+                    if (!gui.isPaused()) {
+                        pauseCheck.stop();
+                        executeCpuTurn(); // Recursión cuando se reanude
+                    }
+                });
+                pauseCheck.start();
+                return;
+            }
+
             if (!currentBattle.isFinished()) {
                 currentBattle.executeCpuTurn();
                 updateUI();
@@ -545,7 +560,6 @@ public class GameController implements Serializable {
                     updateUI();
 
                     if (currentBattle.getCurrentPlayer().isCPU()) {
-
                         Timer timer = new Timer(1000, e -> executeCpuTurn());
                         timer.setRepeats(false);
                         timer.start();
@@ -565,6 +579,10 @@ public class GameController implements Serializable {
      */
     private void startAutoBattle() {
         Timer timer = new Timer(1500, e -> {
+            if (gui.isPaused()) {
+                return;
+            }
+
             if (!currentBattle.isFinished()) {
                 currentBattle.executeCpuTurn();
                 updateUI();
@@ -574,6 +592,7 @@ public class GameController implements Serializable {
                     updateUI();
                 }
             } else {
+                ((Timer) e.getSource()).stop();
                 checkBattleEnd();
             }
         });
@@ -733,7 +752,45 @@ public class GameController implements Serializable {
         this.gui.setGameMode(gameState.getGameMode());
     }
 
-    public Trainer getCurrentTrainer(){
-    return currentBattle.getCurrentPlayer();
+    /**
+     * Pauses the turn timer if it is currently running.
+     * This will stop the countdown and preserve the remaining time.
+     * The timer can be resumed later with {@link #resumeTimer()}.
+     *
+     * <p>This method has no effect if:
+     * <ul>
+     *   <li>The timer is not initialized (null)</li>
+     *   <li>The timer is already paused or stopped</li>
+     * </ul>
+     *
+     * @see #resumeTimer()
+     */
+    public void pauseTimer() {
+        if (turnTimer != null && turnTimer.isRunning()) {
+            turnTimer.stop();
+            isTimerPaused = true;
+        }
     }
+
+    /**
+     * Resumes the turn timer if it was previously paused.
+     * The countdown will continue from where it was paused.
+     *
+     * <p>This method has no effect if:
+     * <ul>
+     *   <li>The timer is not initialized (null)</li>
+     *   <li>The timer was not previously paused</li>
+     *   <li>The timer is already running</li>
+     * </ul>
+     *
+     * @see #pauseTimer()
+     * @throws IllegalStateException if attempting to resume when battle has ended
+     */
+    public void resumeTimer() {
+        if (isTimerPaused && turnTimer != null) {
+            turnTimer.start();
+            isTimerPaused = false;
+        }
+    }
+
 }
