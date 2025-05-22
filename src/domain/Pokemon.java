@@ -266,6 +266,10 @@ public class Pokemon implements Cloneable, Serializable {
 
         int boost = statBoosts.getOrDefault(stat.toLowerCase(), 0);
         int result = base + boost;
+
+
+        int total = base + boost;
+        System.out.println("📊 [" + name + "] " + stat + ": base=" + base + ", boost=" + boost + ", total=" + total);
         return result;
     }
 

@@ -72,6 +72,17 @@
                     true,
                     false
             )));
+            moves.put("IRON DEFENSE", new StatusMove("IRON DEFENSE", "STEEL", 100, 15, 0, new Effect(
+                    EffectType.BUFF,
+                    Target.USER,
+                    new HashMap<String, Integer>() {{
+                        put("defense", 2);
+                    }},
+                    null,
+                    999,     // Duración larga (persistente)
+                    true,    // Stackeable
+                    false    // No fuerza cambio
+            )));
 
 
 
