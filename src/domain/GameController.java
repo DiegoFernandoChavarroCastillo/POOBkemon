@@ -384,7 +384,7 @@ public class GameController {
                 itemButton.setIcon(new ImageIcon(scaled));
             }
 
-            itemButton.setBackground(new Color(176, 224, 230)); // Azul agua GBA
+            itemButton.setBackground(new Color(176, 224, 230));
             itemButton.setFocusPainted(false);
             itemButton.setHorizontalAlignment(SwingConstants.LEFT);
 
@@ -392,36 +392,73 @@ public class GameController {
             itemButton.addActionListener(e -> {
                 itemDialog.dispose();
 
-                // Mostrar segunda ventana para elegir Pokémon objetivo
-                String[] targets = current.getTeam().getPokemons().stream()
-                        .map(p -> p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")")
-                        .toArray(String[]::new);
+                // Segunda ventana: selección de Pokémon objetivo
+                JDialog targetDialog = new JDialog(gui, "Objetivo del Ítem", true);
+                targetDialog.setLayout(new BorderLayout());
+                targetDialog.setSize(450, 300);
+                targetDialog.setLocationRelativeTo(gui);
+                targetDialog.getContentPane().setBackground(new Color(152, 251, 152));
 
-                String selectedTarget = (String) JOptionPane.showInputDialog(
-                        gui,
-                        "Selecciona un Pokémon objetivo:",
-                        "Objetivo del Ítem",
-                        JOptionPane.PLAIN_MESSAGE,
-                        null,
-                        targets,
-                        targets[0]);
+                JLabel targetLabel = new JLabel("Selecciona un Pokémon objetivo", SwingConstants.CENTER);
+                targetLabel.setFont(new Font("Arial", Font.BOLD, 16));
+                targetLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+                targetDialog.add(targetLabel, BorderLayout.NORTH);
 
-                if (selectedTarget != null) {
-                    int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
+                JPanel pokePanel = new JPanel(new GridLayout(0, 1, 5, 5));
+                pokePanel.setBackground(new Color(152, 251, 152));
 
-                    Item selectedItem = current.getItems().get(itemIndex);
-                    Pokemon targetPokemon = current.getTeam().getPokemons().get(targetIndex);
-                    if (eventListener != null) {
-                        eventListener.onItemUsed(current.getName(), selectedItem.getName(), targetPokemon.getName());
+                for (int j = 0; j < current.getTeam().getPokemons().size(); j++) {
+                    Pokemon p = current.getTeam().getPokemons().get(j);
+                    String pokeName = p.getName();
+                    int hp = p.getHp();
+                    int maxHp = p.getMaxHp();
+                    boolean isFainted = (hp <= 0);
+
+                    String label = pokeName + " (HP: " + hp + "/" + maxHp + ")";
+                    if (isFainted) label += " - Debilitado";
+
+                    JButton pokeButton = new JButton(label);
+
+                    // Imagen del Pokémon
+                    String pokeImagePath = "src/sprites/" + pokeName.toLowerCase() + "_front.png";
+                    File pokeImageFile = new File(pokeImagePath);
+                    if (pokeImageFile.exists()) {
+                        ImageIcon icon = new ImageIcon(pokeImagePath);
+                        Image scaled = icon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+                        pokeButton.setIcon(new ImageIcon(scaled));
                     }
 
-                    currentBattle.performAction(Action.createUseItem(itemIndex, targetIndex));
-                    updateUI();
-                    if (turnTimer != null) {
-                        turnTimer.stop();
-                    }
-                    endPlayerTurn();
+                    pokeButton.setHorizontalAlignment(SwingConstants.LEFT);
+                    pokeButton.setBackground(isFainted ? Color.LIGHT_GRAY : new Color(176, 224, 230));
+                    pokeButton.setEnabled(!isFainted);
+                    pokeButton.setFocusPainted(false);
+
+                    int targetIndex = j;
+                    pokeButton.addActionListener(ev -> {
+                        targetDialog.dispose();
+
+                        Item selectedItem = current.getItems().get(itemIndex);
+                        Pokemon targetPokemon = current.getTeam().getPokemons().get(targetIndex);
+
+                        if (eventListener != null) {
+                            eventListener.onItemUsed(current.getName(), selectedItem.getName(), targetPokemon.getName());
+                        }
+
+                        currentBattle.performAction(Action.createUseItem(itemIndex, targetIndex));
+                        updateUI();
+                        if (turnTimer != null) {
+                            turnTimer.stop();
+                        }
+                        endPlayerTurn();
+                    });
+
+                    pokePanel.add(pokeButton);
                 }
+
+                JScrollPane scrollPane = new JScrollPane(pokePanel);
+                scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                targetDialog.add(scrollPane, BorderLayout.CENTER);
+                targetDialog.setVisible(true);
             });
 
             itemPanel.add(itemButton);
@@ -432,6 +469,7 @@ public class GameController {
         itemDialog.add(scrollPane, BorderLayout.CENTER);
         itemDialog.setVisible(true);
     }
+
 
 
     /**
