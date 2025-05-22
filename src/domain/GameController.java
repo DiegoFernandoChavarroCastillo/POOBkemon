@@ -275,39 +275,71 @@ public class GameController {
     public void showSwitchPokemonDialog() {
         gui.getBattleLogPanel().clearMessages();
         Trainer current = currentBattle.getCurrentPlayer();
-        String[] pokemons = new String[current.getTeam().getPokemons().size()];
 
-        for (int i = 0; i < pokemons.length; i++) {
+        JDialog switchDialog = new JDialog(gui, "Cambiar Pokémon", true);
+        switchDialog.setLayout(new BorderLayout());
+        switchDialog.setSize(450, 300);
+        switchDialog.setLocationRelativeTo(gui);
+        switchDialog.getContentPane().setBackground(new Color(152, 251, 152)); // Verde Esmeralda
+
+        JLabel titleLabel = new JLabel("Selecciona un Pokémon", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        switchDialog.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel pokePanel = new JPanel(new GridLayout(0, 1, 5, 5));
+        pokePanel.setBackground(new Color(152, 251, 152));
+
+        for (int i = 0; i < current.getTeam().getPokemons().size(); i++) {
             Pokemon p = current.getTeam().getPokemons().get(i);
-            String status = (p.getHp() <= 0) ? " - Debilitado" : "";
-            pokemons[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")" + status;
-        }
+            String pokeName = p.getName();
+            int hp = p.getHp();
+            int maxHp = p.getMaxHp();
+            boolean isFainted = (hp <= 0);
 
-        String selected = (String) JOptionPane.showInputDialog(
-                gui,
-                "Selecciona un Pokémon:",
-                "Cambiar Pokémon",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                pokemons,
-                pokemons[0]);
+            String label = pokeName + " (HP: " + hp + "/" + maxHp + ")";
+            if (isFainted) label += " - Debilitado";
 
-        if (selected != null) {
-            int pokemonIndex = Arrays.asList(pokemons).indexOf(selected);
+            JButton pokeButton = new JButton(label);
 
-            // Notificar el evento de cambio de Pokémon
-            Pokemon selectedPokemon = current.getTeam().getPokemons().get(pokemonIndex);
-            if (eventListener != null) {
-                eventListener.onPokemonSwitched(current.getName(), selectedPokemon.getName());
+            // Cargar imagen
+            String path = "src/sprites/" + pokeName.toLowerCase() + "_front.png";
+            File imageFile = new File(path);
+            if (imageFile.exists()) {
+                ImageIcon icon = new ImageIcon(path);
+                Image scaled = icon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+                pokeButton.setIcon(new ImageIcon(scaled));
             }
 
-            currentBattle.performAction(Action.createSwitchPokemon(pokemonIndex));
-            updateUI();
-            if (turnTimer != null) {
-                turnTimer.stop();
-            }
-            endPlayerTurn();
+            pokeButton.setHorizontalAlignment(SwingConstants.LEFT);
+            pokeButton.setBackground(isFainted ? Color.LIGHT_GRAY : new Color(176, 224, 230));
+            pokeButton.setEnabled(!isFainted);
+            pokeButton.setFocusPainted(false);
+
+            int index = i;
+            pokeButton.addActionListener(e -> {
+                switchDialog.dispose();
+
+                // Notificar evento
+                if (eventListener != null) {
+                    eventListener.onPokemonSwitched(current.getName(), pokeName);
+                }
+
+                currentBattle.performAction(Action.createSwitchPokemon(index));
+                updateUI();
+                if (turnTimer != null) {
+                    turnTimer.stop();
+                }
+                endPlayerTurn();
+            });
+
+            pokePanel.add(pokeButton);
         }
+
+        JScrollPane scrollPane = new JScrollPane(pokePanel);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        switchDialog.add(scrollPane, BorderLayout.CENTER);
+        switchDialog.setVisible(true);
     }
 
     /**
