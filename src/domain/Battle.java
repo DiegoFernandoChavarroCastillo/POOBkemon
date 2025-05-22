@@ -238,6 +238,10 @@ public class Battle implements Serializable {
         }
     }
 
+    /**
+     * Procesa los efectos que deben activarse al inicio de cada turno para ambos jugadores.
+     * Llama al método correspondiente en el Pokémon activo de cada entrenador si está en combate.
+     */
     public void processTurnStartEffects() {
         Trainer[] players = new Trainer[]{player1, player2};
         for (Trainer player : players) {
