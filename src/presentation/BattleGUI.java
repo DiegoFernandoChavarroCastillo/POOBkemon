@@ -336,8 +336,8 @@ public class BattleGUI extends JFrame implements BattleEventListener {
 
     private void loadPokemonSprite(JLabel label, String pokemonName, boolean isBackView) {
         String basePath = "src/sprites/";
-        int spriteWidth = 200;
-        int spriteHeight = 200;
+        int spriteWidth = 150;
+        int spriteHeight = 150;
 
         // Añadir sufijo según perspectiva
         String suffix = isBackView ? "_back" : "_front";
@@ -395,10 +395,8 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(new Color(120, 184, 232)); // Azul cielo Pokémon
 
-        // Panel de batalla que contendrá los sprites de Pokémon en formato Esmeralda
-        JPanel battlePanel = new JPanel();
-        battlePanel.setLayout(null); // Usamos posicionamiento absoluto para el estilo Esmeralda
-        battlePanel.setBackground(new Color(120, 184, 232));
+        // Panel de batalla que contendrá los sprites de Pokémon con fondo personalizado
+        JPanel battlePanel = new BackgroundPanel(); // Usar el panel personalizado con fondo
 
         // Paneles de información de los Pokémon
         panelPok1 = new JPanel(new BorderLayout());
@@ -442,7 +440,7 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         pok1Label.setBounds(80, 220, 200, 200); // Pokémon activo en la parte inferior izquierda
 
         pok2Label = new JLabel("", JLabel.CENTER);
-        pok2Label.setBounds(500, 120, 200, 200); // Pokémon rival en la parte superior derecha
+        pok2Label.setBounds(500, 90, 200, 200); // Pokémon rival en la parte superior derecha
 
         // Agregar componentes al panel de batalla
         battlePanel.add(panelPok1);
@@ -666,6 +664,39 @@ public class BattleGUI extends JFrame implements BattleEventListener {
 
     public BattleLogPanel getBattleLogPanel(){
         return logPanel;
+    }
+    private class BackgroundPanel extends JPanel {
+        private BufferedImage backgroundImage;
+
+        public BackgroundPanel() {
+            setLayout(null); // Usamos posicionamiento absoluto para el estilo Esmeralda
+            loadBackgroundImage();
+        }
+
+        private void loadBackgroundImage() {
+            try {
+                backgroundImage = ImageIO.read(new File("src/sprites/battleBackground.png"));
+            } catch (IOException e) {
+                System.err.println("Error al cargar la imagen de fondo: " + e.getMessage());
+                backgroundImage = null;
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (backgroundImage != null) {
+                // Escalar la imagen para que cubra todo el panel
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                g2d.dispose();
+            } else {
+                // Si no se puede cargar la imagen, usar el color de fondo por defecto
+                g.setColor(new Color(120, 184, 232));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        }
     }
 
 
