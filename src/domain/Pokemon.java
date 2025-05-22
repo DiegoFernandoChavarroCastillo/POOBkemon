@@ -192,6 +192,7 @@ public class Pokemon implements Cloneable, Serializable {
      */
     public void resetBoosts() {
         statBoosts.clear();
+        System.out.println("♻️ [" + name + "] Reinició todos sus aumentos/reducciones de estadísticas.");
     }
 
     /**

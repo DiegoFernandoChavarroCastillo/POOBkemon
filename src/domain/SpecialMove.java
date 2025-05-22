@@ -73,7 +73,11 @@ public class SpecialMove extends Move implements Serializable {
         Random rand = new Random();
         if (rand.nextInt(100) < precision) {
             double multiplier = TypeChart.getEffectiveness(type, target.getType());
-            int damage = (int) (((2 * user.getLevel() / 5 + 2) * power * user.getSpecialAttack() / target.getSpecialDefense()) / 50.0 + 2);
+            int spAttack = user.getEffectiveStat("specialattack");
+            int spDefense = target.getEffectiveStat("specialdefense");
+
+            int damage = (int) (((2 * user.getLevel() / 5 + 2) * power * spAttack / spDefense) / 50.0 + 2);
+
             target.takeDamage((int) (damage * multiplier));
             currentPP--;
         }
