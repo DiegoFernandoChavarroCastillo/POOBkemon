@@ -49,28 +49,28 @@ public class PokemonDataBase implements Serializable {
         ));
 
         pokemons.put("Dragonite", new Pokemon(
-                "Dragonite", "DRAGON,FLYING", 386,
+                "Dragonite", "DRAGON", 386,
                 403, 317, 328, 328,
                 284, 100, 100,
                 new ArrayList<>()
         ));
 
         pokemons.put("Togetic", new Pokemon(
-                "Togetic", "FAIRY,FLYING", 314,
+                "Togetic", "FAIRY", 314,
                 196, 295, 284, 339,
                 196, 100, 100,
                 new ArrayList<>()
         ));
 
         pokemons.put("Tyranitar", new Pokemon(
-                "Tyranitar", "ROCK,DARK", 404,
+                "Tyranitar", "ROCK", 404,
                 403, 350, 317, 328,
                 243, 100, 100,
                 new ArrayList<>()
         ));
 
         pokemons.put("Gardevoir", new Pokemon(
-                "Gardevoir", "PSYCHIC,FAIRY", 340,
+                "Gardevoir", "PSYCHIC", 340,
                 251, 251, 383, 361,
                 284, 100, 100,
                 new ArrayList<>()
@@ -84,7 +84,7 @@ public class PokemonDataBase implements Serializable {
         ));
 
         pokemons.put("Metagross", new Pokemon(
-                "Metagross", "STEEL,PSYCHIC", 364,
+                "Metagross", "STEEL", 364,
                 405, 394, 317, 306,
                 262, 100, 100,
                 new ArrayList<>()
@@ -105,7 +105,7 @@ public class PokemonDataBase implements Serializable {
         ));
 
         pokemons.put("Delibird", new Pokemon(
-                "Delibird", "ICE,FLYING", 294,
+                "Delibird", "ICE", 294,
                 229, 207, 251, 207,
                 273, 100, 100,
                 new ArrayList<>()

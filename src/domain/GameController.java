@@ -9,10 +9,11 @@ import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
 import java.io.File;
+import java.io.Serializable;
 import java.util.*;
 import java.util.List;
 
-public class GameController {
+public class GameController implements Serializable {
     private Battle currentBattle;
     private BattleGUI gui;
     private Timer turnTimer;
@@ -392,6 +393,9 @@ public class GameController {
             itemButton.addActionListener(e -> {
                 itemDialog.dispose();
 
+                // Determinar si el ítem es un revive
+                boolean isReviveItem = isReviveItem(item);
+
                 // Segunda ventana: selección de Pokémon objetivo
                 JDialog targetDialog = new JDialog(gui, "Objetivo del Ítem", true);
                 targetDialog.setLayout(new BorderLayout());
@@ -429,8 +433,20 @@ public class GameController {
                     }
 
                     pokeButton.setHorizontalAlignment(SwingConstants.LEFT);
-                    pokeButton.setBackground(isFainted ? Color.LIGHT_GRAY : new Color(176, 224, 230));
-                    pokeButton.setEnabled(!isFainted);
+
+                    // Lógica corregida para habilitar/deshabilitar botones según el tipo de ítem
+                    boolean canUseItem;
+                    if (isReviveItem) {
+                        // Para revive: solo pokémon debilitados
+                        canUseItem = isFainted;
+                        pokeButton.setBackground(isFainted ? new Color(176, 224, 230) : Color.LIGHT_GRAY);
+                    } else {
+                        // Para otros ítems (pociones, etc.): solo pokémon no debilitados
+                        canUseItem = !isFainted;
+                        pokeButton.setBackground(isFainted ? Color.LIGHT_GRAY : new Color(176, 224, 230));
+                    }
+
+                    pokeButton.setEnabled(canUseItem);
                     pokeButton.setFocusPainted(false);
 
                     int targetIndex = j;
@@ -468,6 +484,12 @@ public class GameController {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         itemDialog.add(scrollPane, BorderLayout.CENTER);
         itemDialog.setVisible(true);
+    }
+
+    private boolean isReviveItem(Item item) {
+        String itemName = item.getName().toLowerCase();
+        return itemName.contains("revive") || itemName.contains("revivir") ||
+                itemName.contains("revival") || itemName.equals("max revive");
     }
 
 

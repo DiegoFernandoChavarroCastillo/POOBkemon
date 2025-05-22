@@ -1,8 +1,9 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public class Effect {
+public class Effect implements Serializable {
 
     private EffectType effectType;
     private Map<String, Integer> statChanges;

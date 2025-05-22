@@ -9,7 +9,7 @@ import java.util.List;
  * Clase encargada de manejar la persistencia del juego (guardar/cargar partidas)
  */
 public class PersistenceManager {
-    private static final String SAVE_FOLDER = "saves/";
+    public static final String SAVE_FOLDER = "saves/";
 
     static {
         // Crear la carpeta de guardados si no existe
@@ -63,4 +63,5 @@ public class PersistenceManager {
         }
         return savedGames;
     }
+    
 }
