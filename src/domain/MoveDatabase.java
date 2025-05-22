@@ -116,6 +116,18 @@
                     true,  // puede acumularse (hasta -6)
                     false
             )));
+            moves.put("STRING SHOT", new StatusMove("STRING SHOT", "BUG", 95, 40, 0, new Effect(
+                    EffectType.DEBUFF,
+                    Target.OPPONENT,
+                    new HashMap<String, Integer>() {{
+                        put("speed", -1);
+                    }},
+                    null,
+                    999,   // duración prolongada
+                    true,  // stackeable (hasta -6)
+                    false
+            )));
+
 
 
 
