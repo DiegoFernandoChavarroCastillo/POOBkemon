@@ -79,9 +79,9 @@
                         put("defense", 2);
                     }},
                     null,
-                    999,     // Duración larga (persistente)
-                    true,    // Stackeable
-                    false    // No fuerza cambio
+                    999,    
+                    true,  
+                    false  
             )));
 
             moves.put("WITHDRAW", new StatusMove("WITHDRAW", "WATER", 100, 40, 0, new Effect(
@@ -98,10 +98,10 @@
             moves.put("WILL-O-WISP", new StatusMove("WILL-O-WISP", "FIRE", 85, 15, 0, new Effect(
                     EffectType.STATUS,
                     Target.OPPONENT,
-                    null,          // no modifica stats directamente (reducción de ataque se puede implementar aparte si deseas)
-                    "burned",      // estado aplicado
-                    999,           // duración prolongada (hasta que se cure)
-                    false,         // no stackeable
+                    null,         
+                    "burned",      
+                    999,          
+                    false,       
                     false
             )));
             moves.put("CURSE", new CurseMove());
@@ -112,8 +112,8 @@
                         put("defense", -1);
                     }},
                     null,
-                    999,   // duración larga
-                    true,  // puede acumularse (hasta -6)
+                    999,   
+                    true,
                     false
             )));
             moves.put("STRING SHOT", new StatusMove("STRING SHOT", "BUG", 95, 40, 0, new Effect(
@@ -123,8 +123,8 @@
                         put("speed", -1);
                     }},
                     null,
-                    999,   // duración prolongada
-                    true,  // stackeable (hasta -6)
+                    999,  
+                    true, 
                     false
             )));
 
@@ -170,7 +170,7 @@
             if (available.size() < n) {
                 throw new IllegalStateException("No hay suficientes movimientos disponibles.");
             }
-            Collections.shuffle(available); // aleatorizar
+            Collections.shuffle(available); 
             List<Move> selected = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 selected.add(available.get(i).clone());

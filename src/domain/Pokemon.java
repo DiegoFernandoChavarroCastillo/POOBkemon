@@ -192,7 +192,6 @@ public class Pokemon implements Cloneable, Serializable {
      */
     public void resetBoosts() {
         statBoosts.clear();
-        System.out.println("♻️ [" + name + "] Reinició todos sus aumentos/reducciones de estadísticas.");
     }
 
     /**
@@ -239,10 +238,16 @@ public class Pokemon implements Cloneable, Serializable {
         return false;
     }
 
+    /**
+     * Agrega un efecto activo al Pokémon.
+     * Si ya tiene un efecto de tipo "toxic", no se añade otro efecto igual para evitar duplicados.
+     *
+     * @param effect el efecto a aplicar y almacenar como activo
+     */
     public void addEffect(Effect effect) {
         for (ActiveEffect ae : activeEffects) {
             if ("toxic".equalsIgnoreCase(ae.getEffect().getStatus())) {
-                return; // ya existe efecto toxic activo
+                return;
             }
         }
         activeEffects.add(new ActiveEffect(effect));
@@ -275,13 +280,18 @@ public class Pokemon implements Cloneable, Serializable {
         return result;
     }
 
+    /**
+     * Procesa todos los efectos activos al inicio del turno del Pokémon.
+     * Aplica daño según el clima (ej. tormenta de arena), efectos de estado (ej. tóxico, quemadura, maldición),
+     * y actualiza contadores de duración para buffs y restricciones.
+     */
     public void processStartOfTurnEffects() {
 
         String climate = Battle.getClimate();
         if ("sandstorm".equalsIgnoreCase(climate)) {
             String type = this.getType().toUpperCase();
             if (!type.equals("ROCK") && !type.equals("GROUND") && !type.equals("STEEL")) {
-                this.takeDamage(this.getMaxHp() / 16); // daño por turno
+                this.takeDamage(this.getMaxHp() / 16); 
             }
         }
 
@@ -292,13 +302,16 @@ public class Pokemon implements Cloneable, Serializable {
 
             if (e.getEffectType() == EffectType.STATUS && "toxic".equals(status)) {
                 int toxicTurn = ae.getTurnsApplied();
-                if (toxicTurn < 1) toxicTurn = 1; // seguridad
+                if (toxicTurn < 1) toxicTurn = 1; 
                 int damage = getMaxHp() / 16 * toxicTurn;
                 takeDamage(damage);
             }
+
             else if ("burned".equals(status)) {
                 takeDamage(getMaxHp() / 8);
-            } else if ("cursed".equals(status)) {
+            }
+
+            else if ("cursed".equals(status)) {
                 takeDamage(getMaxHp() / 4);
             }
 
@@ -307,18 +320,17 @@ public class Pokemon implements Cloneable, Serializable {
                     String stat = entry.getKey();
                     int value = entry.getValue();
 
-                    modifyStat(stat, value); // ya imprime el cambio
+                    modifyStat(stat, value); 
                 }
 
-                ae.tick(); // ejecutar tick después para evitar que expire sin aplicar
+                ae.tick(); 
 
-                // ⚠️ Como es un efecto inmediato, lo removemos si no es de duración prolongada
                 if (!e.isStackable() || e.getDuration() == 1) {
                     it.remove();
                     continue;
                 }
 
-                continue; // saltar el resto para evitar errores con efectos STATUS
+                continue; 
             }
 
             ae.tick();
@@ -331,32 +343,31 @@ public class Pokemon implements Cloneable, Serializable {
             if (restrictionDuration == 0) restriction = null;
         }
 
-        forcedToSwitch = false; // reseteamos después de procesar
+        forcedToSwitch = false; 
     }
 
+    /**
+     * Aplica una restricción temporal al Pokémon, impidiéndole realizar ciertas acciones.
+     *
+     * @param restriction el tipo de restricción (por ejemplo, "provocación", "encore")
+     * @param duration    la duración de la restricción en turnos
+     */
     public void applyRestriction(String restriction, int duration) {
         this.restriction = restriction;
         this.restrictionDuration = duration;
-    }
-
-    public boolean isRestricted() {
-        return restriction != null;
-    }
-
-    public String getRestriction() {
-        return restriction;
     }
 
     public void setForcedToSwitch(boolean forced) {
         this.forcedToSwitch = forced;
     }
 
-    public boolean mustSwitch() {
-        return forcedToSwitch;
-    }
+
+
+
 
     // Getters
 
+    public boolean mustSwitch() {return forcedToSwitch;}
     public String getName() { return name; }
     public String getType() { return type; }
     public int getLevel() { return level; }
@@ -370,25 +381,6 @@ public class Pokemon implements Cloneable, Serializable {
     public int getEvasion() { return evasion; }
     public List<Move> getMoves() { return moves; }
 
-    public void increaseEvasionStage() {
-        if (evasionStage < 6) {
-            evasionStage++;
-            System.out.println(name + " aumentó su evasión a nivel " + evasionStage);
-        }
-    }
-
-    public int getEvasionStage() {
-        return evasionStage;
-    }
-
-    public double getEvasionMultiplier() {
-        int stage = evasionStage;
-        if (stage >= 0) {
-            return (3.0 + stage) / 3.0;
-        } else {
-            return 3.0 / (3.0 - stage);
-        }
-    }
 
 
     public class ActiveEffect {
