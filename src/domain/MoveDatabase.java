@@ -105,8 +105,17 @@
                     false
             )));
             moves.put("CURSE", new CurseMove());
-
-
+            moves.put("TAIL WHIP", new StatusMove("TAIL WHIP", "NORMAL", 100, 30, 0, new Effect(
+                    EffectType.DEBUFF,
+                    Target.OPPONENT,
+                    new HashMap<String, Integer>() {{
+                        put("defense", -1);
+                    }},
+                    null,
+                    999,   // duración larga
+                    true,  // puede acumularse (hasta -6)
+                    false
+            )));
 
 
 
