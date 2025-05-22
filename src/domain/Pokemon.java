@@ -166,8 +166,10 @@ public class Pokemon implements Cloneable, Serializable {
      * @param amount cantidad a sumar o restar
      */
     public void modifyStat(String stat, int amount) {
-        int current = statBoosts.getOrDefault(stat, 0);
-        statBoosts.put(stat, current + amount);
+        statBoosts.put(stat, statBoosts.getOrDefault(stat, 0) + amount);
+        getEffectiveStat("attack");
+        getEffectiveStat("defense");
+
     }
 
 
@@ -244,6 +246,29 @@ public class Pokemon implements Cloneable, Serializable {
         activeEffects.add(new ActiveEffect(effect));
     }
 
+    /**
+     * Devuelve el valor real de una estadística, considerando los aumentos/reducciones por efectos de batalla.
+     *
+     * @param stat nombre de la estadística ("attack", "defense", etc.)
+     * @return valor base + modificadores
+     */
+    public int getEffectiveStat(String stat) {
+        int base = switch (stat.toLowerCase()) {
+            case "attack" -> attack;
+            case "defense" -> defense;
+            case "specialattack" -> specialAttack;
+            case "specialdefense" -> specialDefense;
+            case "speed" -> speed;
+            case "accuracy" -> accuracy;
+            case "evasion" -> evasion;
+            default -> 0;
+        };
+
+        int boost = statBoosts.getOrDefault(stat.toLowerCase(), 0);
+        int result = base + boost;
+        return result;
+    }
+
     public void processStartOfTurnEffects() {
 
         String climate = Battle.getClimate();
@@ -270,9 +295,27 @@ public class Pokemon implements Cloneable, Serializable {
             } else if ("cursed".equals(status)) {
                 takeDamage(getMaxHp() / 4);
             }
-            System.out.println("🔁 Antes de tick → turnosAplicados: " + ae.getTurnsApplied());
+
+            if ((e.getEffectType() == EffectType.BUFF || e.getEffectType() == EffectType.DEBUFF) && e.getStatChanges() != null) {
+                for (Map.Entry<String, Integer> entry : e.getStatChanges().entrySet()) {
+                    String stat = entry.getKey();
+                    int value = entry.getValue();
+
+                    modifyStat(stat, value); // ya imprime el cambio
+                }
+
+                ae.tick(); // ejecutar tick después para evitar que expire sin aplicar
+
+                // ⚠️ Como es un efecto inmediato, lo removemos si no es de duración prolongada
+                if (!e.isStackable() || e.getDuration() == 1) {
+                    it.remove();
+                    continue;
+                }
+
+                continue; // saltar el resto para evitar errores con efectos STATUS
+            }
+
             ae.tick();
-            System.out.println("🔁 Después de tick → turnosAplicados: " + ae.getTurnsApplied());
 
             if (ae.isExpired()) it.remove();
         }
