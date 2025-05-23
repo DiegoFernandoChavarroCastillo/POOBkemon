@@ -4,10 +4,14 @@ import domain.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * La clase BattleGUI representa la interfaz gráfica para el juego de batalla de Pokémon.
@@ -31,9 +35,12 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     private Font pokemonFont;
     private boolean isPaused = false;
     private JPanel pauseOverlay;
+    private static final int ORIGINAL_WIDTH = 800;
+    private static final int ORIGINAL_HEIGHT = 400;
+    private BackgroundPanel battlePanel;
 
     /**
-     * Construye una nueva instancia de BattleGUI que inicializa la ventana del menú principal.
+     * Construye una nueva instancia de BatatleGUI que inicializa la ventana del menú principal.
      * Configura las propiedades predeterminadas de la ventana y prepara la interfaz del menú.
      */
     public BattleGUI() {
@@ -254,9 +261,21 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         getContentPane().removeAll();
         setTitle("POOBkemon Battle");
         setSize(800, 600);
+        setMinimumSize(new Dimension(800, 600));
         setLocationRelativeTo(null);
         prepareElements();
         prepareListeners();
+
+        // Agregar listener para redimensionamiento
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (battlePanel != null) {
+                    repositionBattleElements();
+                }
+            }
+        });
+
         revalidate();
         repaint();
     }
@@ -397,13 +416,14 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(new Color(120, 184, 232));
 
+        // Crear el panel de batalla
+        battlePanel = new BackgroundPanel();
+        battlePanel.setPreferredSize(new Dimension(800, 400));
 
-        JPanel battlePanel = new BackgroundPanel();
-
+        // Panel de información del Pokémon 1 (izquierda-arriba)
         panelPok1 = new JPanel(new BorderLayout());
         panelPok1.setBackground(new Color(255, 255, 200));
         panelPok1.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-        panelPok1.setBounds(20, 20, 250, 80);
 
         labelInfo1 = new JLabel("", JLabel.CENTER);
         labelInfo1.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
@@ -418,10 +438,10 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelPok1.add(labelInfo1, BorderLayout.NORTH);
         panelPok1.add(hpBar1, BorderLayout.SOUTH);
 
+        // Panel de información del Pokémon 2 (derecha-arriba)
         panelPok2 = new JPanel(new BorderLayout());
         panelPok2.setBackground(new Color(255, 255, 200));
         panelPok2.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
-        panelPok2.setBounds(530, 20, 250, 80);
 
         labelInfo2 = new JLabel("", JLabel.CENTER);
         labelInfo2.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
@@ -436,71 +456,90 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelPok2.add(labelInfo2, BorderLayout.NORTH);
         panelPok2.add(hpBar2, BorderLayout.SOUTH);
 
-
+        // Labels para sprites de Pokémon
         pok1Label = new JLabel("", JLabel.CENTER);
-        pok1Label.setBounds(80, 220, 200, 200);
-
         pok2Label = new JLabel("", JLabel.CENTER);
-        pok2Label.setBounds(500, 90, 200, 200);
 
+        // Agregar componentes al panel de batalla
         battlePanel.add(panelPok1);
         battlePanel.add(panelPok2);
         battlePanel.add(pok1Label);
         battlePanel.add(pok2Label);
 
+        // Posicionar inicialmente los elementos
+        panelPok1.setBounds(20, 20, 250, 80);
+        panelPok2.setBounds(530, 20, 250, 80);
+        pok1Label.setBounds(80, 220, 200, 200);
+        pok2Label.setBounds(500, 90, 200, 200);
+
+        // Panel inferior (información y opciones)
         panelInferior = new JPanel(new BorderLayout());
-        panelInferior.setBackground(new Color(200, 224, 248)); // Azul claro Pokémon
+        panelInferior.setBackground(new Color(200, 224, 248));
         panelInferior.setBorder(BorderFactory.createLineBorder(new Color(64, 120, 192), 3));
 
-        JPanel panelInfo = new JPanel();
+        // Panel de información
+        JPanel panelInfo = new JPanel(new GridBagLayout());
         panelInfo.setPreferredSize(new Dimension(300, 100));
-        panelInfo.setBackground(new Color(255, 255, 200)); // Amarillo claro Pokémon
+        panelInfo.setBackground(new Color(255, 255, 200));
         panelInfo.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(5, 5, 5, 5);
 
         infoLabel = new JLabel("", JLabel.CENTER);
         infoLabel.setFont(pokemonFont);
-        panelInfo.add(infoLabel);
+        panelInfo.add(infoLabel, gbc);
 
+        gbc.gridy = 1;
         turnTimerLabel = new JLabel("Tiempo restante: 20s", JLabel.CENTER);
         turnTimerLabel.setFont(pokemonFont.deriveFont(Font.BOLD, 16));
-        panelInfo.add(turnTimerLabel);
+        panelInfo.add(turnTimerLabel, gbc);
 
+        // Panel de opciones con CardLayout
         cardLayout = new CardLayout();
         panelOpciones = new JPanel(cardLayout);
-        panelOpciones.setPreferredSize(new Dimension(450, 110)); // Fijar tamaño del panel de opciones
+        panelOpciones.setPreferredSize(new Dimension(450, 110));
 
+        // Panel principal de opciones
         JPanel mainOptionsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
-        mainOptionsPanel.setBackground(new Color(200, 224, 248)); // Azul claro Pokémon
+        mainOptionsPanel.setBackground(new Color(200, 224, 248));
 
-        btnAtacar = createBattleButton("ATACAR", new Color(200, 60, 60)); // Rojo Pokémon
-        btnCambiar = createBattleButton("CAMBIAR", new Color(60, 140, 200)); // Azul Pokémon
-        btnItem = createBattleButton("USAR ÍTEM", new Color(60, 200, 60)); // Verde Pokémon
-        btnHuir = createBattleButton("HUIR", new Color(200, 160, 60)); // Amarillo Pokémon
+        btnAtacar = createBattleButton("ATACAR", new Color(200, 60, 60));
+        btnCambiar = createBattleButton("CAMBIAR", new Color(60, 140, 200));
+        btnItem = createBattleButton("USAR ÍTEM", new Color(60, 200, 60));
+        btnHuir = createBattleButton("HUIR", new Color(200, 160, 60));
 
         mainOptionsPanel.add(btnAtacar);
         mainOptionsPanel.add(btnCambiar);
         mainOptionsPanel.add(btnItem);
         mainOptionsPanel.add(btnHuir);
 
+        // Panel de opciones de ataque
         JPanel attackOptionsPanel = new JPanel();
-        attackOptionsPanel.setBackground(new Color(200, 224, 248)); // Azul claro Pokémon
+        attackOptionsPanel.setBackground(new Color(200, 224, 248));
 
         panelOpciones.add(mainOptionsPanel, "main");
         panelOpciones.add(attackOptionsPanel, "attacks");
 
+        // Panel de log
         logPanel = new BattleLogPanel();
         logPanel.setPreferredSize(new Dimension(getWidth(), 50));
-        logPanel.setBackground(new Color(64, 120, 192)); // Azul oscuro Pokémon
+        logPanel.setBackground(new Color(64, 120, 192));
         logPanel.setForeground(Color.WHITE);
         logPanel.setFont(pokemonFont.deriveFont(14f));
 
+        // Ensamblar panel inferior
         panelInferior.add(panelInfo, BorderLayout.WEST);
         panelInferior.add(panelOpciones, BorderLayout.CENTER);
 
+        // Panel inferior completo
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(logPanel, BorderLayout.NORTH);
         bottomPanel.add(panelInferior, BorderLayout.SOUTH);
 
+        // Ensamblar panel principal
         mainPanel.add(battlePanel, BorderLayout.CENTER);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -661,10 +700,17 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     }
     private class BackgroundPanel extends JPanel {
         private BufferedImage backgroundImage;
+        private ProportionalLayout proportionalLayout;
 
         public BackgroundPanel() {
-            setLayout(null);
+            proportionalLayout = new ProportionalLayout();
+            setLayout(proportionalLayout);
             loadBackgroundImage();
+        }
+
+        public void addComponentWithBounds(Component comp, int x, int y, int width, int height) {
+            add(comp);
+            proportionalLayout.addLayoutComponent(comp, new Rectangle(x, y, width, height));
         }
 
         private void loadBackgroundImage() {
@@ -762,6 +808,132 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         return isPaused;
     }
 
+
+
+    private class ProportionalLayout implements LayoutManager2 {
+        private Map<Component, Rectangle> componentBounds = new HashMap<>();
+        private Dimension originalSize = new Dimension(800, 600);
+
+        public void addComponent(Component comp, double x, double y, double width, double height) {
+            Rectangle bounds = new Rectangle();
+            bounds.setRect(x, y, width, height);
+            componentBounds.put(comp, bounds);
+        }
+
+        @Override
+        public void addLayoutComponent(Component comp, Object constraints) {
+            if (constraints instanceof Rectangle) {
+                Rectangle bounds = (Rectangle) constraints;
+                double x = bounds.x / (double) originalSize.width;
+                double y = bounds.y / (double) originalSize.height;
+                double width = bounds.width / (double) originalSize.width;
+                double height = bounds.height / (double) originalSize.height;
+                addComponent(comp, x, y, width, height);
+            }
+        }
+
+        @Override
+        public void addLayoutComponent(String name, Component comp) {}
+
+        @Override
+        public void removeLayoutComponent(Component comp) {
+            componentBounds.remove(comp);
+        }
+
+        @Override
+        public Dimension preferredLayoutSize(Container parent) {
+            return new Dimension(800, 600);
+        }
+
+        @Override
+        public Dimension minimumLayoutSize(Container parent) {
+            return new Dimension(800, 600);
+        }
+
+        @Override
+        public Dimension maximumLayoutSize(Container target) {
+            return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        }
+
+        @Override
+        public void layoutContainer(Container parent) {
+            Dimension currentSize = parent.getSize();
+
+            for (Map.Entry<Component, Rectangle> entry : componentBounds.entrySet()) {
+                Component comp = entry.getKey();
+                Rectangle proportionalBounds = entry.getValue();
+
+                int x = (int) (proportionalBounds.getX() * currentSize.width);
+                int y = (int) (proportionalBounds.getY() * currentSize.height);
+                int width = (int) (proportionalBounds.getWidth() * currentSize.width);
+                int height = (int) (proportionalBounds.getHeight() * currentSize.height);
+
+                comp.setBounds(x, y, width, height);
+            }
+        }
+
+        @Override
+        public float getLayoutAlignmentX(Container target) {
+            return 0.5f;
+        }
+
+        @Override
+        public float getLayoutAlignmentY(Container target) {
+            return 0.5f;
+        }
+
+        @Override
+        public void invalidateLayout(Container target) {}
+    }
+    private void repositionBattleElements() {
+        if (battlePanel == null) return;
+
+        int battleWidth = battlePanel.getWidth();
+        int battleHeight = battlePanel.getHeight();
+
+        if (battleWidth <= 0 || battleHeight <= 0) return;
+
+        // Calcular factores de escala
+        double scaleX = (double) battleWidth / ORIGINAL_WIDTH;
+        double scaleY = (double) battleHeight / ORIGINAL_HEIGHT;
+
+        // Reposicionar paneles de información de Pokémon
+        if (panelPok1 != null) {
+            int x1 = (int) (20 * scaleX);
+            int y1 = (int) (20 * scaleY);
+            int w1 = (int) (250 * scaleX);
+            int h1 = (int) (80 * scaleY);
+            panelPok1.setBounds(x1, y1, w1, h1);
+        }
+
+        if (panelPok2 != null) {
+            int x2 = (int) ((ORIGINAL_WIDTH - 270) * scaleX); // 530 en original
+            int y2 = (int) (20 * scaleY);
+            int w2 = (int) (250 * scaleX);
+            int h2 = (int) (80 * scaleY);
+            panelPok2.setBounds(x2, y2, w2, h2);
+        }
+
+        // Reposicionar sprites de Pokémon
+        if (pok1Label != null) {
+            int x1 = (int) (80 * scaleX);
+            int y1 = (int) (220 * scaleY);
+            int w1 = (int) (200 * scaleX);
+            int h1 = (int) (200 * scaleY);
+            pok1Label.setBounds(x1, y1, w1, h1);
+        }
+
+        if (pok2Label != null) {
+            int x2 = (int) ((ORIGINAL_WIDTH - 300) * scaleX); // 500 en original
+            int y2 = (int) (90 * scaleY);
+            int w2 = (int) (200 * scaleX);
+            int h2 = (int) (200 * scaleY);
+            pok2Label.setBounds(x2, y2, w2, h2);
+        }
+
+        battlePanel.revalidate();
+        battlePanel.repaint();
+    }
 
 
 
