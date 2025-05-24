@@ -4,13 +4,30 @@ import domain.*;
 import javax.swing.*;
 import java.util.List;
 
+/**
+ * Clase encargada de gestionar la persistencia de partidas del juego,
+ * proporcionando métodos para guardar y cargar estados del juego.
+ * Utiliza cuadros de diálogo para interactuar con el usuario.
+ */
 public class GamePersistenceManager {
     private JFrame parentFrame;
 
+    /**
+     * Constructor que inicializa el gestor de persistencia con el frame padre.
+     *
+     * @param parentFrame El frame padre que se utilizará para mostrar los diálogos
+     */
     public GamePersistenceManager(JFrame parentFrame) {
         this.parentFrame = parentFrame;
     }
 
+    /**
+     * Guarda el estado actual del juego en un archivo.
+     * Muestra diálogos para solicitar el nombre del archivo y notifica el resultado.
+     *
+     * @param controller El controlador del juego que contiene el estado actual
+     * @param gameMode El modo de juego actual que se desea guardar
+     */
     public void saveGame(GameController controller, int gameMode) {
         if (controller.getCurrentBattle() == null) {
             JOptionPane.showMessageDialog(parentFrame, "No hay partida en curso para guardar");
@@ -35,6 +52,12 @@ public class GamePersistenceManager {
         }
     }
 
+    /**
+     * Carga un estado del juego previamente guardado.
+     * Muestra una lista de partidas guardadas disponibles y permite seleccionar una.
+     *
+     * @return El estado del juego cargado, o null si no se completó la operación
+     */
     public GameState loadGame() {
         List<String> savedGames = PersistenceManager.getSavedGames();
         if (savedGames.isEmpty()) {
