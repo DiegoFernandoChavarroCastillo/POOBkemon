@@ -47,6 +47,15 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         setupMainMenu();
     }
 
+    /**
+     * Inicializa la ventana principal con configuración básica:
+     * - Establece el título de la aplicación
+     * - Define el tamaño inicial (500x400)
+     * - Centra la ventana en la pantalla
+     * - Configura el comportamiento al cerrar (terminar aplicación)
+     * - Carga la fuente personalizada del juego
+     * - Inicializa el controlador principal del juego
+     */
     private void initializeFrame() {
         setTitle("POOBkemon Battle - Menú Principal");
         setSize(500, 400);
@@ -57,6 +66,11 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         controller = new GameController(this);
     }
 
+    /**
+     * Carga la fuente personalizada del juego desde un archivo TTF.
+     * Si no puede cargar la fuente, usa Arial como fallback.
+     * Registra la fuente en el entorno gráfico para su uso global.
+     */
     private void loadPokemonFont() {
         try {
             pokemonFont = Font.createFont(Font.TRUETYPE_FONT,
@@ -69,12 +83,25 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         }
     }
 
+    /**
+     * Inicializa los componentes principales del juego:
+     * - Gestor de sprites para imágenes del juego
+     * - Gestor de persistencia para guardar/cargar partidas
+     * - Gestor de pausa para controlar el estado del juego
+     */
     private void initializeComponents() {
         spriteManager = new SpriteManager();
         persistenceManager = new GamePersistenceManager(this);
         pauseManager = new PauseManager(this, controller, pokemonFont);
     }
 
+    /**
+     * Configura y muestra el menú principal del juego:
+     * - Crea el panel del menú principal con el controlador y fuente
+     * - Añade el panel a la ventana principal
+     * - Prepara la barra de menú superior
+     * - Hace visible la ventana
+     */
     private void setupMainMenu() {
         mainMenuPanel = new MainMenuPanel(controller, pokemonFont);
         add(mainMenuPanel);
@@ -82,6 +109,12 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         setVisible(true);
     }
 
+    /**
+     * Prepara la barra de menú superior con:
+     * - Menú Archivo (opciones Guardar/Cargar partida)
+     * - Menú Pausa (opción Pausar/Reanudar)
+     * Configura los estilos visuales y los listeners de acción
+     */
     private void prepareMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(80, 160, 200));
@@ -120,7 +153,13 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     }
 
     /**
-     * Configura la ventana de batalla
+     * Configura la ventana para el modo batalla:
+     * - Limpia el contenido actual
+     * - Establece título y tamaño (800x600)
+     * - Crea y organiza los componentes de batalla
+     * - Configura listeners para eventos
+     * - Añade listener para redimensionamiento
+     * - Actualiza la interfaz gráfica
      */
     public void setupBattleWindow() {
         getContentPane().removeAll();
@@ -133,7 +172,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         layoutBattleComponents();
         setupBattleListeners();
 
-        // Listener para redimensionamiento
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -147,32 +185,40 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         repaint();
     }
 
+    /**
+     * Crea los componentes principales de la interfaz de batalla:
+     * - Panel de fondo con imagen
+     * - Paneles de información de Pokémon (jugador y oponente)
+     * - Labels para mostrar los sprites de los Pokémon
+     * - Panel de registro de eventos (log)
+     * - Componentes de control (botones, etc.)
+     */
     private void createBattleComponents() {
-        // Panel principal de batalla
         battlePanel = new BackgroundPanel();
         battlePanel.setPreferredSize(new Dimension(800, 400));
 
-        // Componentes de información de Pokémon usando los nuevos componentes especializados
         pokemonInfo1 = new PokemonInfoPanel(pokemonFont);
         pokemonInfo2 = new PokemonInfoPanel(pokemonFont);
 
-        // Labels para sprites
         pok1Label = new JLabel("", JLabel.CENTER);
         pok2Label = new JLabel("", JLabel.CENTER);
 
-        // Panel de log
         logPanel = new BattleLogPanel();
         logPanel.setPreferredSize(new Dimension(getWidth(), 50));
         logPanel.setBackground(new Color(64, 120, 192));
         logPanel.setForeground(Color.WHITE);
         logPanel.setFont(pokemonFont.deriveFont(14f));
 
-        // Crear componentes de control
         createControlComponents();
     }
 
+    /**
+     * Crea los componentes de control de la batalla:
+     * - Panel de información con temporizador
+     * - Panel de opciones con CardLayout para alternar vistas
+     * - Botones de acciones principales (Atacar, Cambiar, etc.)
+     */
     private void createControlComponents() {
-        // Panel de información y timer
         JPanel panelInfo = new JPanel(new GridBagLayout());
         panelInfo.setPreferredSize(new Dimension(300, 100));
         panelInfo.setBackground(new Color(255, 255, 200));
@@ -192,17 +238,22 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         turnTimerLabel.setFont(pokemonFont.deriveFont(Font.BOLD, 16));
         panelInfo.add(turnTimerLabel, gbc);
 
-        // Panel de opciones con CardLayout
         cardLayout = new CardLayout();
         panelOpciones = new JPanel(cardLayout);
         panelOpciones.setPreferredSize(new Dimension(450, 110));
 
-        // Crear botones de batalla
         createBattleButtons();
     }
 
+    /**
+     * Crea los botones principales de acciones de batalla:
+     * - Atacar (rojo)
+     * - Cambiar Pokémon (azul)
+     * - Usar Ítem (verde)
+     * - Huir (amarillo)
+     * Configura sus propiedades visuales y los añade al panel
+     */
     private void createBattleButtons() {
-        // Panel principal de opciones
         JPanel mainOptionsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
         mainOptionsPanel.setBackground(new Color(200, 224, 248));
 
@@ -216,7 +267,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         mainOptionsPanel.add(btnItem);
         mainOptionsPanel.add(btnHuir);
 
-        // Panel vacío para opciones de ataque
         JPanel attackOptionsPanel = new JPanel();
         attackOptionsPanel.setBackground(new Color(200, 224, 248));
 
@@ -224,6 +274,17 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         panelOpciones.add(attackOptionsPanel, "attacks");
     }
 
+    /**
+     * Crea un botón de batalla con estilo personalizado:
+     * - Fuente específica del juego
+     * - Color de fondo personalizado
+     * - Efecto hover (brillo al pasar el ratón)
+     * - Borde y padding adecuados
+     *
+     * @param text Texto a mostrar en el botón
+     * @param bgColor Color de fondo del botón
+     * @return JButton configurado con el estilo de batalla
+     */
     private JButton createBattleButton(String text, Color bgColor) {
         JButton button = new JButton(text);
         button.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
@@ -245,44 +306,53 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         return button;
     }
 
+    /**
+     * Organiza los componentes de la interfaz de batalla:
+     * - Distribuye los paneles de información de Pokémon
+     * - Posiciona los sprites de los Pokémon
+     * - Configura el panel inferior con log y opciones
+     * - Ensambla todos los componentes en el layout principal
+     */
     private void layoutBattleComponents() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(new Color(120, 184, 232));
 
-        // Agregar componentes al panel de batalla
         battlePanel.add(pokemonInfo1);
         battlePanel.add(pokemonInfo2);
         battlePanel.add(pok1Label);
         battlePanel.add(pok2Label);
 
-        // Posicionar elementos inicialmente
         pokemonInfo1.setBounds(20, 20, 250, 80);
         pokemonInfo2.setBounds(530, 20, 250, 80);
         pok1Label.setBounds(80, 220, 200, 200);
         pok2Label.setBounds(500, 90, 200, 200);
 
-        // Panel inferior
         JPanel panelInferior = new JPanel(new BorderLayout());
         panelInferior.setBackground(new Color(200, 224, 248));
         panelInferior.setBorder(BorderFactory.createLineBorder(new Color(64, 120, 192), 3));
 
-        // Crear panel de información
         JPanel panelInfo = createInfoPanel();
         panelInferior.add(panelInfo, BorderLayout.WEST);
         panelInferior.add(panelOpciones, BorderLayout.CENTER);
 
-        // Panel inferior completo
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(logPanel, BorderLayout.NORTH);
         bottomPanel.add(panelInferior, BorderLayout.SOUTH);
 
-        // Ensamblar panel principal
         mainPanel.add(battlePanel, BorderLayout.CENTER);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
     }
 
+    /**
+     * Crea y configura el panel de información de batalla.
+     * @return JPanel configurado con:
+     *         - Layout GridBag para organización flexible
+     *         - Fondo amarillo claro
+     *         - Borde gris
+     *         - Contiene las etiquetas de información y temporizador
+     */
     private JPanel createInfoPanel() {
         JPanel panelInfo = new JPanel(new GridBagLayout());
         panelInfo.setPreferredSize(new Dimension(300, 100));
@@ -302,6 +372,13 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         return panelInfo;
     }
 
+    /**
+     * Configura los listeners para los botones de batalla:
+     * - Atacar: Muestra opciones de ataque
+     * - Cambiar: Abre diálogo para cambiar Pokémon
+     * - Ítem: Abre diálogo para seleccionar ítem
+     * - Huir: Maneja la rendición del jugador
+     */
     private void setupBattleListeners() {
         btnAtacar.addActionListener(e -> controller.showAttackOptions());
         btnCambiar.addActionListener(e -> controller.showSwitchPokemonDialog());
@@ -310,18 +387,19 @@ public class BattleGUI extends JFrame implements BattleEventListener {
     }
 
     /**
-     * Actualiza la información de batalla usando los componentes especializados
+     * Actualiza toda la información visual de la batalla.
+     * @param state Estado actual de la batalla que contiene:
+     *              - Información de los Pokémon
+     *              - Turno actual
+     *              - Nombres de jugadores
      */
     public void updateBattleInfo(BattleState state) {
-        // Usar los componentes especializados para actualizar información de Pokémon
         pokemonInfo1.updatePokemonInfo(state.getPlayer1Pokemon());
         pokemonInfo2.updatePokemonInfo(state.getPlayer2Pokemon());
 
-        // Indicar cuál es el turno activo
         pokemonInfo1.setTurnActive(state.isPlayer1Turn());
         pokemonInfo2.setTurnActive(!state.isPlayer1Turn());
 
-        // Cargar sprites usando SpriteManager
         spriteManager.loadPokemonSprite(pok1Label,
                 state.getPlayer1Pokemon().getName().toLowerCase(), true);
         spriteManager.loadPokemonSprite(pok2Label,
@@ -331,6 +409,13 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         updateButtonStates(state);
     }
 
+    /**
+     * Actualiza la información del turno actual con:
+     * - Nombre del jugador activo (color diferenciado)
+     * - HP actual/máximo de ambos Pokémon
+     * - Clima actual si existe
+     * @param state Estado de la batalla con la información a mostrar
+     */
     private void updateTurnInfo(BattleState state) {
         String turnInfo = "Turno de " + state.getCurrentPlayerName();
         Color turnColor = state.isPlayer1Turn() ?
@@ -358,6 +443,12 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         infoLabel.setFont(pokemonFont);
     }
 
+    /**
+     * Actualiza el estado de los botones según:
+     * - Si es turno del jugador humano
+     * - Si el juego está pausado
+     * @param state Estado actual de la batalla
+     */
     private void updateButtonStates(BattleState state) {
         boolean isHumanTurn = state.isHumanTurn();
         btnAtacar.setEnabled(isHumanTurn && !isPaused());
@@ -366,6 +457,13 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         btnHuir.setEnabled(isHumanTurn && !isPaused());
     }
 
+    /**
+     * Muestra las opciones de ataque disponibles:
+     * - Crea botones para cada movimiento
+     * - Deshabilita movimientos sin PP
+     * - Añade botón de cancelar
+     * @param moves Lista de movimientos disponibles
+     */
     public void showAttackOptions(List<Move> moves) {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
         attackPanel.removeAll();
@@ -399,15 +497,26 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         attackPanel.repaint();
     }
 
+    /**
+     * Actualiza el temporizador de turno.
+     * @param secondsLeft Segundos restantes para el turno actual
+     */
     public void updateTurnTimer(int secondsLeft) {
         turnTimerLabel.setText("Tiempo restante: " + secondsLeft + "s");
     }
 
-    // Métodos delegados a componentes especializados
+    /**
+     * Delega el guardado de partida al PersistenceManager.
+     * @see GamePersistenceManager#saveGame(GameController, int)
+     */
     private void saveGame() {
         persistenceManager.saveGame(controller, gameMode);
     }
 
+    /**
+     * Delega la carga de partida al PersistenceManager.
+     * @see GamePersistenceManager#loadGame()
+     */
     private void loadGame() {
         GameState gameState = persistenceManager.loadGame();
         if (gameState != null) {
@@ -418,79 +527,147 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         }
     }
 
+    /**
+     * Alterna el estado de pausa del juego.
+     * @see PauseManager#togglePause()
+     */
     private void togglePause() {
         pauseManager.togglePause();
     }
 
+    /**
+     * Verifica si el juego está pausado.
+     * @return true si el juego está pausado, false en caso contrario
+     * @see PauseManager#isPaused()
+     */
     public boolean isPaused() {
         return pauseManager.isPaused();
     }
 
-    // Métodos de utilidad y configuración
+    /**
+     * Establece el controlador del juego.
+     * @param controller Controlador principal del juego
+     */
     public void setController(GameController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Establece el modo de juego actual.
+     * @param mode Modo de juego (1=PvP, 2=PvM, 3=MvM)
+     */
     public void setGameMode(int mode) {
         this.gameMode = mode;
     }
 
+    /**
+     * Muestra el mensaje de fin de batalla y termina la aplicación.
+     * @param message Mensaje con el resultado de la batalla
+     */
     public void showBattleEnd(String message) {
         JOptionPane.showMessageDialog(this, message);
         System.exit(0);
     }
 
+    /**
+     * Verifica si el panel de ataques está visible.
+     * @return true si hay ataques mostrados, false en caso contrario
+     */
     public boolean isAttackPanelVisible() {
         return ((JPanel)panelOpciones.getComponent(1)).getComponentCount() > 0;
     }
 
+    /**
+     * Muestra las opciones principales de batalla.
+     */
     public void showMainOptions() {
         cardLayout.show(panelOpciones, "main");
     }
 
+    /**
+     * Obtiene el panel de registro de batalla.
+     * @return Instancia de BattleLogPanel
+     */
     public BattleLogPanel getBattleLogPanel() {
         return logPanel;
     }
 
-    // Implementación de BattleEventListener
+    /**
+     * Registra un ataque en el log de batalla.
+     * @param attackerName Nombre del atacante
+     * @param targetName Nombre del objetivo
+     * @param moveName Nombre del movimiento usado
+     */
     @Override
     public void onAttackPerformed(String attackerName, String targetName, String moveName) {
         logPanel.addMessage(attackerName + " atacó a " + targetName + " con " + moveName + "!");
     }
 
+    /**
+     * Registra uso de ítem en el log de batalla.
+     * @param playerName Nombre del jugador
+     * @param itemName Nombre del ítem usado
+     * @param targetName Nombre del objetivo
+     */
     @Override
     public void onItemUsed(String playerName, String itemName, String targetName) {
         logPanel.addMessage(playerName + " usó " + itemName + " en " + targetName + "!");
     }
 
+    /**
+     * Registra cambio de Pokémon en el log de batalla.
+     * @param playerName Nombre del jugador
+     * @param pokemonName Nombre del Pokémon enviado
+     */
     @Override
     public void onPokemonSwitched(String playerName, String pokemonName) {
         logPanel.addMessage(playerName + " envió a " + pokemonName + "!");
     }
 
+    /**
+     * Registra daño recibido en el log de batalla.
+     * @param pokemonName Nombre del Pokémon afectado
+     * @param damage Cantidad de daño recibido
+     */
     @Override
     public void onDamageReceived(String pokemonName, int damage) {
         logPanel.addMessage(pokemonName + " perdió " + damage + " PS!");
     }
 
+    /**
+     * Registra Pokémon debilitado en el log de batalla.
+     * @param pokemonName Nombre del Pokémon debilitado
+     */
     @Override
     public void onPokemonFainted(String pokemonName) {
         logPanel.addMessage(pokemonName + " se debilitó!");
     }
 
-    // Clase interna para el panel de fondo con imagen
+    /**
+     * Panel interno para el fondo de batalla con imagen escalable.
+     */
     private class BackgroundPanel extends JPanel {
         private java.awt.image.BufferedImage backgroundImage;
 
+        /**
+         * Crea el panel de fondo con layout absoluto.
+         */
         public BackgroundPanel() {
-            setLayout(null); // Layout absoluto para posicionamiento manual
+            setLayout(null);
             loadBackgroundImage();
         }
 
+        /**
+         * Carga la imagen de fondo usando SpriteManager.
+         */
         private void loadBackgroundImage() {
             backgroundImage = spriteManager.loadBackgroundImage("battleBackground.png");
         }
 
+        /**
+         * Dibuja el fondo escalado o color sólido si no hay imagen.
+         * @param g Contexto gráfico para dibujar
+         */
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -507,6 +684,10 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         }
     }
 
+    /**
+     * Reposiciona los elementos de batalla al redimensionar la ventana,
+     * manteniendo las proporciones originales.
+     */
     private void repositionBattleElements() {
         if (battlePanel == null) return;
 
@@ -515,11 +696,9 @@ public class BattleGUI extends JFrame implements BattleEventListener {
 
         if (battleWidth <= 0 || battleHeight <= 0) return;
 
-        // Calcular factores de escala
         double scaleX = (double) battleWidth / ORIGINAL_WIDTH;
         double scaleY = (double) battleHeight / ORIGINAL_HEIGHT;
 
-        // Reposicionar componentes de información de Pokémon
         if (pokemonInfo1 != null) {
             int x1 = (int) (20 * scaleX);
             int y1 = (int) (20 * scaleY);
@@ -536,7 +715,6 @@ public class BattleGUI extends JFrame implements BattleEventListener {
             pokemonInfo2.setBounds(x2, y2, w2, h2);
         }
 
-        // Reposicionar sprites de Pokémon
         if (pok1Label != null) {
             int x1 = (int) (80 * scaleX);
             int y1 = (int) (220 * scaleY);
@@ -557,17 +735,28 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         battlePanel.repaint();
     }
 
-    // Métodos para compatibilidad con otras partes del sistema
+    /**
+     * Muestra la pantalla inicial de selección de modo de juego.
+     */
     public void showInitialScreen() {
         setVisible(false);
         ModeSelectionGUI selector = new ModeSelectionGUI(this);
         selector.setVisible(true);
     }
 
+    /**
+     * Muestra la selección de modo de juego.
+     */
     public void showGameModeSelection() {
         setVisible(true);
     }
 
+    /**
+     * Inicia el juego en modo supervivencia:
+     * - Solicita nombres de jugadores
+     * - Configura la ventana de batalla
+     * - Inicia el controlador en modo supervivencia
+     */
     public void startSurvivalGame() {
         setVisible(false);
 
@@ -586,6 +775,10 @@ public class BattleGUI extends JFrame implements BattleEventListener {
         controller.startSurvivalMode(player1, player2);
     }
 
+    /**
+     * Punto de entrada principal de la aplicación.
+     * @param args Argumentos de línea de comandos (no utilizados)
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             BattleGUI gui = new BattleGUI();
