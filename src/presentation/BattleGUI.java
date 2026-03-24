@@ -1,527 +1,484 @@
 package presentation;
 
 import domain.*;
-import domain.Action;
-
-import javax.imageio.ImageIO;
+import presentation.components.*;
 import javax.swing.*;
-import javax.swing.Timer;
 import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.List;
 
-
-
 /**
- * The BattleGUI class represents the graphical user interface for the Pokémon battle game.
- * It handles the display of the battle scene, player interactions, and game flow.
+ * Clase principal de la interfaz de batalla, refactorizada con responsabilidades separadas.
+ * Se encarga de coordinar los diferentes componentes de la UI especializados.
+ *
+ * Autores: Diego Chavarro, Diego Rodríguez
  */
-public class BattleGUI extends JFrame {
-    private JPanel panelSuperior, panelInferior, panelPok1, panelPok2, panelImagenes;
-    private JLabel labelInfo1, labelInfo2, infoLabel;
-    private JProgressBar hpBar1, hpBar2;
-    private JButton btnAtacar, btnCambiar, btnItem, btnExtra;
+public class BattleGUI extends JFrame implements BattleEventListener {
+    // Componentes especializados
+    private MainMenuPanel mainMenuPanel;
+    private SpriteManager spriteManager;
+    private GamePersistenceManager persistenceManager;
+    private PauseManager pauseManager;
+
+    // Componentes de batalla
+    private PokemonInfoPanel pokemonInfo1, pokemonInfo2;
     private JLabel pok1Label, pok2Label;
-    private Battle battle;
+    private BattleLogPanel logPanel;
     private JPanel panelOpciones;
     private CardLayout cardLayout;
+    private JLabel infoLabel, turnTimerLabel;
+    private JButton btnAtacar, btnCambiar, btnItem, btnHuir;
+
+    // Estado
     private GameController controller;
+    private Font pokemonFont;
+    private int gameMode;
+    private BackgroundPanel battlePanel;
+    private static final int ORIGINAL_WIDTH = 800;
+    private static final int ORIGINAL_HEIGHT = 400;
 
     /**
-     * Constructs a new BattleGUI instance and initializes the main menu.
+     * Construye una nueva instancia de BattleGUI que inicializa la ventana del menú principal.
      */
     public BattleGUI() {
+        initializeFrame();
+        initializeComponents();
+        setupMainMenu();
+    }
+
+    /**
+     * Inicializa la ventana principal con configuración básica:
+     * - Establece el título de la aplicación
+     * - Define el tamaño inicial (500x400)
+     * - Centra la ventana en la pantalla
+     * - Configura el comportamiento al cerrar (terminar aplicación)
+     * - Carga la fuente personalizada del juego
+     * - Inicializa el controlador principal del juego
+     */
+    private void initializeFrame() {
         setTitle("POOBkemon Battle - Menú Principal");
         setSize(500, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        prepareMenu();
+
+        loadPokemonFont();
+        controller = new GameController(this);
+    }
+
+    /**
+     * Carga la fuente personalizada del juego desde un archivo TTF.
+     * Si no puede cargar la fuente, usa Arial como fallback.
+     * Registra la fuente en el entorno gráfico para su uso global.
+     */
+    private void loadPokemonFont() {
+        try {
+            pokemonFont = Font.createFont(Font.TRUETYPE_FONT,
+                    new java.io.File("src/sprites/pokemon_font.ttf")).deriveFont(12f);
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            ge.registerFont(pokemonFont);
+        } catch (Exception e) {
+            System.err.println("No se pudo cargar la fuente Pokémon, usando fuente por defecto");
+            pokemonFont = new Font("Arial", Font.PLAIN, 12);
+        }
+    }
+
+    /**
+     * Inicializa los componentes principales del juego:
+     * - Gestor de sprites para imágenes del juego
+     * - Gestor de persistencia para guardar/cargar partidas
+     * - Gestor de pausa para controlar el estado del juego
+     */
+    private void initializeComponents() {
+        spriteManager = new SpriteManager();
+        persistenceManager = new GamePersistenceManager(this);
+        pauseManager = new PauseManager(this, controller, pokemonFont);
+    }
+
+    /**
+     * Configura y muestra el menú principal del juego:
+     * - Crea el panel del menú principal con el controlador y fuente
+     * - Añade el panel a la ventana principal
+     * - Prepara la barra de menú superior
+     * - Hace visible la ventana
+     */
+    private void setupMainMenu() {
+        mainMenuPanel = new MainMenuPanel(controller, pokemonFont);
+        add(mainMenuPanel);
+        prepareMenuBar();
         setVisible(true);
     }
 
-    private void prepareMenu() {
-        JPanel menuPanel = new JPanel(new BorderLayout());
-        menuPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    /**
+     * Prepara la barra de menú superior con:
+     * - Menú Archivo (opciones Guardar/Cargar partida)
+     * - Menú Pausa (opción Pausar/Reanudar)
+     * Configura los estilos visuales y los listeners de acción
+     */
+    private void prepareMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.setBackground(new Color(80, 160, 200));
+        menuBar.setBorder(BorderFactory.createLineBorder(new Color(40, 80, 100), 1));
 
-        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        try {
-            BufferedImage logoImage = ImageIO.read(new File("src/sprites/Logo.png"));
-            Image scaledLogo = logoImage.getScaledInstance(200, 100, Image.SCALE_SMOOTH);
-            JLabel logoLabel = new JLabel(new ImageIcon(scaledLogo));
-            logoPanel.add(logoLabel);
-            logoPanel.setBackground(new Color(194, 255, 82));
-        } catch (IOException e) {
-            System.err.println("Error al cargar el logo: " + e.getMessage());
-            JLabel titleLabel = new JLabel("¡Bienvenido a POOBkemon Battle!", JLabel.CENTER);
-            titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-            logoPanel.add(titleLabel);
-        }
+        // Menú Archivo
+        JMenu fileMenu = new JMenu("Archivo");
+        fileMenu.setForeground(Color.WHITE);
+        fileMenu.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
 
-        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 10, 10));
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
+        JMenuItem saveItem = new JMenuItem("Guardar partida");
+        saveItem.setFont(pokemonFont);
+        saveItem.addActionListener(e -> saveGame());
 
-        JButton pvpButton = new JButton("Jugador vs Jugador (PvP)");
-        JButton pvmButton = new JButton("Jugador vs Máquina (PvM)");
-        JButton mvmButton = new JButton("Máquina vs Máquina (MvM)");
+        JMenuItem loadItem = new JMenuItem("Cargar partida");
+        loadItem.setFont(pokemonFont);
+        loadItem.addActionListener(e -> loadGame());
 
-        pvpButton.addActionListener(e -> showPlayerSetup(1));
-        pvmButton.addActionListener(e -> showPlayerSetup(2));
-        mvmButton.addActionListener(e -> showPlayerSetup(3));
+        fileMenu.add(saveItem);
+        fileMenu.add(loadItem);
+        menuBar.add(fileMenu);
 
-        Font buttonFont = new Font("Arial", Font.BOLD, 14);
-        pvpButton.setFont(buttonFont);
-        pvmButton.setFont(buttonFont);
-        mvmButton.setFont(buttonFont);
+        // Menú Pausa
+        JMenu pauseMenu = new JMenu("Pausa");
+        pauseMenu.setForeground(Color.WHITE);
+        pauseMenu.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
 
-        pvpButton.setBackground(new Color(100, 150, 255));
-        pvmButton.setBackground(new Color(100, 200, 100));
-        mvmButton.setBackground(new Color(255, 150, 100));
+        JMenuItem pauseItem = new JMenuItem("Pausar/Reanudar");
+        pauseItem.setFont(pokemonFont);
+        pauseItem.addActionListener(e -> togglePause());
 
-        pvpButton.setForeground(Color.WHITE);
-        pvmButton.setForeground(Color.WHITE);
-        mvmButton.setForeground(Color.WHITE);
+        pauseMenu.add(pauseItem);
+        menuBar.add(pauseMenu);
 
-        buttonPanel.add(pvpButton);
-        buttonPanel.add(pvmButton);
-        buttonPanel.add(mvmButton);
-
-        menuPanel.add(logoPanel, BorderLayout.NORTH);
-        menuPanel.add(buttonPanel, BorderLayout.CENTER);
-        menuPanel.setBackground(new Color(194, 255, 82));
-
-        add(menuPanel);
+        setJMenuBar(menuBar);
     }
 
-    private void setupBattleWindow() {
+    /**
+     * Configura la ventana para el modo batalla:
+     * - Limpia el contenido actual
+     * - Establece título y tamaño (800x600)
+     * - Crea y organiza los componentes de batalla
+     * - Configura listeners para eventos
+     * - Añade listener para redimensionamiento
+     * - Actualiza la interfaz gráfica
+     */
+    public void setupBattleWindow() {
         getContentPane().removeAll();
         setTitle("POOBkemon Battle");
-        setSize(700, 600);
-        prepareElements();
-        prepareActions();
-        prepareListeners();
-        updateBattleInfo();
+        setSize(800, 600);
+        setMinimumSize(new Dimension(800, 600));
+        setLocationRelativeTo(null);
+
+        createBattleComponents();
+        layoutBattleComponents();
+        setupBattleListeners();
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (battlePanel != null) {
+                    repositionBattleElements();
+                }
+            }
+        });
+
         revalidate();
         repaint();
     }
 
-    public void setBattle(Battle battle) {
-        this.battle = battle;
-        setupBattleWindow();
+    /**
+     * Crea los componentes principales de la interfaz de batalla:
+     * - Panel de fondo con imagen
+     * - Paneles de información de Pokémon (jugador y oponente)
+     * - Labels para mostrar los sprites de los Pokémon
+     * - Panel de registro de eventos (log)
+     * - Componentes de control (botones, etc.)
+     */
+    private void createBattleComponents() {
+        battlePanel = new BackgroundPanel();
+        battlePanel.setPreferredSize(new Dimension(800, 400));
+
+        pokemonInfo1 = new PokemonInfoPanel(pokemonFont);
+        pokemonInfo2 = new PokemonInfoPanel(pokemonFont);
+
+        pok1Label = new JLabel("", JLabel.CENTER);
+        pok2Label = new JLabel("", JLabel.CENTER);
+
+        logPanel = new BattleLogPanel();
+        logPanel.setPreferredSize(new Dimension(getWidth(), 50));
+        logPanel.setBackground(new Color(64, 120, 192));
+        logPanel.setForeground(Color.WHITE);
+        logPanel.setFont(pokemonFont.deriveFont(14f));
+
+        createControlComponents();
     }
 
-    public void updateBattleInfo() {
-        if (battle == null) {
-            System.err.println("Error: Battle is null");
-            showDefaultBattleInfo();
-            return;
-        }
+    /**
+     * Crea los componentes de control de la batalla:
+     * - Panel de información con temporizador
+     * - Panel de opciones con CardLayout para alternar vistas
+     * - Botones de acciones principales (Atacar, Cambiar, etc.)
+     */
+    private void createControlComponents() {
+        JPanel panelInfo = new JPanel(new GridBagLayout());
+        panelInfo.setPreferredSize(new Dimension(300, 100));
+        panelInfo.setBackground(new Color(255, 255, 200));
+        panelInfo.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
 
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(5, 5, 5, 5);
 
-        Trainer player1 = battle.getPlayer1();
-        Trainer player2 = battle.getPlayer2();
+        infoLabel = new JLabel("", JLabel.CENTER);
+        infoLabel.setFont(pokemonFont);
+        panelInfo.add(infoLabel, gbc);
 
-        if (player1 == null || player2 == null) {
-            System.err.println("Error: One or both trainers are null");
-            showDefaultBattleInfo();
-            return;
-        }
-        if (!battle.isFinished()) {
-            Trainer current = battle.getCurrentPlayer();
-            Pokemon active = current.getActivePokemon();
-
-            if (active != null && active.getHp() <= 0 && !current.isCPU()) {
-                handleFaintedPokemon(current);
-            }
-        }
-
-
-        Pokemon pok1 = player1.getActivePokemon();
-        Pokemon pok2 = player2.getActivePokemon();
-
-        if (pok1 == null || pok2 == null) {
-            System.err.println("Error: One or both active Pokémon are null");
-            showDefaultBattleInfo();
-            return;
-        }
-
-
-        updatePokemonInfo(pok1, labelInfo1, hpBar1, panelPok1);
-
-
-        updatePokemonInfo(pok2, labelInfo2, hpBar2, panelPok2);
-
-
-        loadPokemonSprite(pok1Label, pok1.getName().toLowerCase());
-        loadPokemonSprite(pok2Label, pok2.getName().toLowerCase());
-
-
-        String turnInfo;
-        Color turnColor;
-        if (battle.getCurrentPlayer() == player1) {
-            turnInfo = "Turno de " + player1.getName();
-            turnColor = new Color(50, 150, 250); // Blue for player 1
-            panelPok1.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-            panelPok2.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        } else {
-            turnInfo = "Turno de " + player2.getName();
-            turnColor = new Color(250, 50, 50); // Red for player 2/CPU
-            panelPok1.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-            panelPok2.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-        }
-
-
-        String statusText = "<html><div style='text-align:center;'>" +
-                "<b><font color='" + String.format("#%02x%02x%02x",
-                turnColor.getRed(), turnColor.getGreen(), turnColor.getBlue()) + "'>" +
-                turnInfo + "</font></b><br>" +
-                player1.getName() + ": " +
-                "<b>" + pok1.getName() + "</b> (" + pok1.getHp() + "/" + pok1.getMaxHp() + " HP)<br>" +
-                player2.getName() + ": " +
-                "<b>" + pok2.getName() + "</b> (" + pok2.getHp() + "/" + pok2.getMaxHp() + " HP)";
-
-
-        if (Battle.getClimate() != null) {
-            statusText += "<br>Clima: <i>" + Battle.getClimate() + "</i>";
-        }
-
-        statusText += "</div></html>";
-
-        infoLabel.setText(statusText);
-        infoLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        // Update button states based on turn
-        boolean isHumanTurn = !battle.getCurrentPlayer().isCPU();
-        btnAtacar.setEnabled(isHumanTurn);
-        btnCambiar.setEnabled(isHumanTurn);
-        btnItem.setEnabled(isHumanTurn);
-        btnExtra.setEnabled(isHumanTurn);
-
-
-        if (!battle.isFinished()) {
-            Trainer current = battle.getCurrentPlayer();
-            Pokemon active = current.getActivePokemon();
-
-            // If human player's Pokémon fainted and they have others
-            if (active != null && active.getHp() <= 0 && !current.isCPU()) {
-                if (!current.getTeam().isAllFainted()) {
-                    showSwitchPokemonDialog(current);
-                }
-            }
-        }
-    }
-
-    private void updatePokemonInfo(Pokemon pokemon, JLabel infoLabel, JProgressBar hpBar, JPanel panel) {
-        infoLabel.setText(pokemon.getName() + " Lv." + pokemon.getLevel());
-        hpBar.setMaximum(pokemon.getMaxHp());
-        hpBar.setValue(Math.max(0, pokemon.getHp())); // Ensure HP doesn't show negative
-        hpBar.setString(pokemon.getHp() + "/" + pokemon.getMaxHp());
-        hpBar.setStringPainted(true);
-
-        // Update HP bar color based on percentage
-        double hpPercentage = (double) pokemon.getHp() / pokemon.getMaxHp();
-        if (hpPercentage > 0.5) {
-            hpBar.setForeground(Color.GREEN);
-        } else if (hpPercentage > 0.2) {
-            hpBar.setForeground(Color.YELLOW);
-        } else {
-            hpBar.setForeground(Color.RED);
-        }
-
-
-        if (pokemon.getHp() <= 0) {
-            panel.setBackground(new Color(255, 200, 200)); // Light red for fainted
-            hpBar.setForeground(Color.GRAY);
-            infoLabel.setForeground(Color.GRAY);
-        } else {
-            panel.setBackground(new Color(255, 255, 153)); // Light yellow for normal
-            infoLabel.setForeground(Color.BLACK);
-        }
-    }
-
-    private void showDefaultBattleInfo() {
-
-        labelInfo1.setText("No Pokémon");
-        hpBar1.setMaximum(100);
-        hpBar1.setValue(0);
-        hpBar1.setString("0/0");
-        hpBar1.setForeground(Color.RED);
-
-        labelInfo2.setText("No Pokémon");
-        hpBar2.setMaximum(100);
-        hpBar2.setValue(0);
-        hpBar2.setString("0/0");
-        hpBar2.setForeground(Color.RED);
-
-        infoLabel.setText("<html><div style='text-align:center;'>" +
-                "<b>Error loading battle information</b><br>" +
-                "Please check the console for details</div></html>");
-
-
-        pok1Label.setIcon(null);
-        pok1Label.setText("No Pokémon");
-        pok2Label.setIcon(null);
-        pok2Label.setText("No Pokémon");
-
-
-        btnAtacar.setEnabled(false);
-        btnCambiar.setEnabled(false);
-        btnItem.setEnabled(false);
-        btnExtra.setEnabled(false);
-    }
-
-    private void loadPokemonSprite(JLabel label, String pokemonName) {
-        String basePath = "src/sprites/";
-        int spriteWidth = 200;
-        int spriteHeight = 200;
-
-        try {
-            for (String ext : new String[]{".png", ".jpg", ".gif"}) {
-                File file = new File(basePath + pokemonName + ext);
-                if (file.exists()) {
-                    BufferedImage originalImage = ImageIO.read(file);
-                    BufferedImage scaledImage = new BufferedImage(
-                            spriteWidth, spriteHeight, BufferedImage.TYPE_INT_ARGB);
-
-                    Graphics2D g2 = scaledImage.createGraphics();
-                    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                            RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                    g2.drawImage(originalImage, 0, 0, spriteWidth, spriteHeight, null);
-                    g2.dispose();
-
-                    label.setIcon(new ImageIcon(scaledImage));
-                    return;
-                }
-            }
-
-            label.setIcon(null);
-            label.setText(pokemonName);
-        } catch (IOException e) {
-            System.err.println("Error al cargar imagen: " + e.getMessage());
-            label.setIcon(null);
-            label.setText(pokemonName);
-        }
-    }
-
-    private void updateHpBarColor(JProgressBar bar, int currentHp, int maxHp) {
-        double percentage = (double) currentHp / maxHp;
-        if (percentage > 0.5) {
-            bar.setForeground(Color.GREEN);
-        } else if (percentage > 0.2) {
-            bar.setForeground(Color.YELLOW);
-        } else {
-            bar.setForeground(Color.RED);
-        }
-    }
-
-    private void prepareElements() {
-        panelSuperior = new JPanel(new GridLayout(1, 2));
-        panelSuperior.setBackground(new Color(194, 255, 82));
-        panelSuperior.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
-
-        panelPok1 = new JPanel(new BorderLayout());
-        panelPok1.setBackground(new Color(255, 255, 153));
-        panelPok1.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        labelInfo1 = new JLabel("pok1     level");
-        hpBar1 = new JProgressBar(0, 100);
-        hpBar1.setValue(80);
-        hpBar1.setForeground(Color.GREEN);
-        panelPok1.add(labelInfo1, BorderLayout.NORTH);
-        panelPok1.add(hpBar1, BorderLayout.SOUTH);
-
-        panelPok2 = new JPanel(new BorderLayout());
-        panelPok2.setBackground(new Color(255, 255, 153));
-        panelPok2.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        labelInfo2 = new JLabel("pok2     level");
-        hpBar2 = new JProgressBar(0, 100);
-        hpBar2.setValue(60);
-        hpBar2.setForeground(Color.GREEN);
-        panelPok2.add(labelInfo2, BorderLayout.NORTH);
-        panelPok2.add(hpBar2, BorderLayout.SOUTH);
-
-        panelSuperior.add(panelPok1);
-        panelSuperior.add(panelPok2);
-
-        panelImagenes = new JPanel(new GridLayout(1, 2));
-        panelImagenes.setBackground(new Color(194, 255, 82));
-        pok1Label = new JLabel(new ImageIcon("src/sprites/pok1.png"), JLabel.CENTER);
-        pok2Label = new JLabel(new ImageIcon("src/sprites/pok2.png"), JLabel.CENTER);
-        panelImagenes.add(pok1Label);
-        panelImagenes.add(pok2Label);
+        gbc.gridy = 1;
+        turnTimerLabel = new JLabel("Tiempo restante: 20s", JLabel.CENTER);
+        turnTimerLabel.setFont(pokemonFont.deriveFont(Font.BOLD, 16));
+        panelInfo.add(turnTimerLabel, gbc);
 
         cardLayout = new CardLayout();
-        panelInferior = new JPanel(new BorderLayout());
-        panelInferior.setBackground(Color.YELLOW);
-        panelInferior.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
+        panelOpciones = new JPanel(cardLayout);
+        panelOpciones.setPreferredSize(new Dimension(450, 110));
 
-        JPanel panelInfo = new JPanel();
-        panelInfo.setPreferredSize(new Dimension(300, 100));
-        panelInfo.setBackground(Color.decode("#FDF074"));
-        panelInfo.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        infoLabel = new JLabel("Panel de información");
-        panelInfo.add(infoLabel);
+        createBattleButtons();
+    }
 
-        JPanel mainOptionsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-        mainOptionsPanel.setBackground(Color.decode("#C8FC4B"));
-        mainOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+    /**
+     * Crea los botones principales de acciones de batalla:
+     * - Atacar (rojo)
+     * - Cambiar Pokémon (azul)
+     * - Usar Ítem (verde)
+     * - Huir (amarillo)
+     * Configura sus propiedades visuales y los añade al panel
+     */
+    private void createBattleButtons() {
+        JPanel mainOptionsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        mainOptionsPanel.setBackground(new Color(200, 224, 248));
 
-        btnAtacar = new JButton("Atacar");
-        btnAtacar.setBackground(Color.RED);
-        btnAtacar.setForeground(Color.WHITE);
-
-        btnCambiar = new JButton("Cambiar");
-        btnCambiar.setBackground(Color.BLUE);
-        btnCambiar.setForeground(Color.WHITE);
-
-        btnItem = new JButton("Usar Ítem");
-        btnItem.setBackground(Color.GREEN.darker());
-        btnItem.setForeground(Color.WHITE);
-
-        btnExtra = new JButton("Huir");
-        btnExtra.setBackground(Color.LIGHT_GRAY);
+        btnAtacar = createBattleButton("ATACAR", new Color(200, 60, 60));
+        btnCambiar = createBattleButton("CAMBIAR", new Color(60, 140, 200));
+        btnItem = createBattleButton("USAR ÍTEM", new Color(60, 200, 60));
+        btnHuir = createBattleButton("HUIR", new Color(200, 160, 60));
 
         mainOptionsPanel.add(btnAtacar);
         mainOptionsPanel.add(btnCambiar);
         mainOptionsPanel.add(btnItem);
-        mainOptionsPanel.add(btnExtra);
+        mainOptionsPanel.add(btnHuir);
 
-        JPanel attackOptionsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-        attackOptionsPanel.setBackground(Color.decode("#C8FC4B"));
-        attackOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        JPanel attackOptionsPanel = new JPanel();
+        attackOptionsPanel.setBackground(new Color(200, 224, 248));
 
-        panelOpciones = new JPanel(cardLayout);
         panelOpciones.add(mainOptionsPanel, "main");
         panelOpciones.add(attackOptionsPanel, "attacks");
+    }
 
+    /**
+     * Crea un botón de batalla con estilo personalizado:
+     * - Fuente específica del juego
+     * - Color de fondo personalizado
+     * - Efecto hover (brillo al pasar el ratón)
+     * - Borde y padding adecuados
+     *
+     * @param text Texto a mostrar en el botón
+     * @param bgColor Color de fondo del botón
+     * @return JButton configurado con el estilo de batalla
+     */
+    private JButton createBattleButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setFont(pokemonFont.deriveFont(Font.BOLD, 14));
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(bgColor.darker(), 2),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor);
+            }
+        });
+
+        return button;
+    }
+
+    /**
+     * Organiza los componentes de la interfaz de batalla:
+     * - Distribuye los paneles de información de Pokémon
+     * - Posiciona los sprites de los Pokémon
+     * - Configura el panel inferior con log y opciones
+     * - Ensambla todos los componentes en el layout principal
+     */
+    private void layoutBattleComponents() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(120, 184, 232));
+
+        battlePanel.add(pokemonInfo1);
+        battlePanel.add(pokemonInfo2);
+        battlePanel.add(pok1Label);
+        battlePanel.add(pok2Label);
+
+        pokemonInfo1.setBounds(20, 20, 250, 80);
+        pokemonInfo2.setBounds(530, 20, 250, 80);
+        pok1Label.setBounds(80, 220, 200, 200);
+        pok2Label.setBounds(500, 90, 200, 200);
+
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.setBackground(new Color(200, 224, 248));
+        panelInferior.setBorder(BorderFactory.createLineBorder(new Color(64, 120, 192), 3));
+
+        JPanel panelInfo = createInfoPanel();
         panelInferior.add(panelInfo, BorderLayout.WEST);
         panelInferior.add(panelOpciones, BorderLayout.CENTER);
 
-        add(panelSuperior, BorderLayout.NORTH);
-        add(panelImagenes, BorderLayout.CENTER);
-        add(panelInferior, BorderLayout.SOUTH);
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.add(logPanel, BorderLayout.NORTH);
+        bottomPanel.add(panelInferior, BorderLayout.SOUTH);
+
+        mainPanel.add(battlePanel, BorderLayout.CENTER);
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        add(mainPanel);
     }
 
-    private void prepareActions() {
+    /**
+     * Crea y configura el panel de información de batalla.
+     * @return JPanel configurado con:
+     *         - Layout GridBag para organización flexible
+     *         - Fondo amarillo claro
+     *         - Borde gris
+     *         - Contiene las etiquetas de información y temporizador
+     */
+    private JPanel createInfoPanel() {
+        JPanel panelInfo = new JPanel(new GridBagLayout());
+        panelInfo.setPreferredSize(new Dimension(300, 100));
+        panelInfo.setBackground(new Color(255, 255, 200));
+        panelInfo.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 2));
 
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        panelInfo.add(infoLabel, gbc);
+
+        gbc.gridy = 1;
+        panelInfo.add(turnTimerLabel, gbc);
+
+        return panelInfo;
     }
 
-    private void prepareListeners() {
-        btnAtacar.addActionListener(e -> showAttackOptions());
-
-        btnCambiar.addActionListener(e -> {
-            Trainer current = battle.getCurrentPlayer();
-            String[] pokemons = new String[current.getTeam().getPokemons().size()];
-
-            for (int i = 0; i < pokemons.length; i++) {
-                Pokemon p = current.getTeam().getPokemons().get(i);
-                String status = (p.getHp() <= 0) ? " - Debilitado" : "";
-                pokemons[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")" + status;
-            }
-
-            String selected = (String) JOptionPane.showInputDialog(
-                    this,
-                    "Selecciona un Pokémon:",
-                    "Cambiar Pokémon",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    pokemons,
-                    pokemons[0]);
-
-            if (selected != null) {
-                int pokemonIndex = Arrays.asList(pokemons).indexOf(selected);
-                controller.getCurrentBattle().performAction(Action.createSwitchPokemon(pokemonIndex));
-                updateBattleInfo();
-                endPlayerTurn();
-            }
-        });
-
-        btnItem.addActionListener(e -> {
-            Trainer current = battle.getCurrentPlayer();
-
-            if (current.getItems().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No tienes ítems disponibles.");
-                return;
-            }
-
-            String[] itemNames = current.getItems().stream()
-                    .map(Item::getName)
-                    .toArray(String[]::new);
-
-            String selectedItemName = (String) JOptionPane.showInputDialog(
-                    this,
-                    "Selecciona un ítem:",
-                    "Usar Ítem",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    itemNames,
-                    itemNames[0]);
-
-            if (selectedItemName != null) {
-                int itemIndex = Arrays.asList(itemNames).indexOf(selectedItemName);
-
-                String[] targets = new String[current.getTeam().getPokemons().size()];
-                for (int i = 0; i < targets.length; i++) {
-                    Pokemon p = current.getTeam().getPokemons().get(i);
-                    targets[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")";
-                }
-
-                String selectedTarget = (String) JOptionPane.showInputDialog(
-                        this,
-                        "Selecciona un Pokémon objetivo:",
-                        "Objetivo del Ítem",
-                        JOptionPane.PLAIN_MESSAGE,
-                        null,
-                        targets,
-                        targets[0]);
-
-                if (selectedTarget != null) {
-                    int targetIndex = Arrays.asList(targets).indexOf(selectedTarget);
-                    battle.performAction(Action.createUseItem(itemIndex, targetIndex));
-                    updateBattleInfo();
-                    endPlayerTurn();
-                }
-            }
-        });
-
-        btnExtra.addActionListener(e -> {
-            int option = JOptionPane.showConfirmDialog(
-                    this,
-                    "¿Quieres rendirte?",
-                    "Rendición",
-                    JOptionPane.YES_NO_OPTION);
-
-            if (option == JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(this, "Te has rendido. ¡Perdiste la batalla!");
-                System.exit(0);
-            }
-        });
+    /**
+     * Configura los listeners para los botones de batalla:
+     * - Atacar: Muestra opciones de ataque
+     * - Cambiar: Abre diálogo para cambiar Pokémon
+     * - Ítem: Abre diálogo para seleccionar ítem
+     * - Huir: Maneja la rendición del jugador
+     */
+    private void setupBattleListeners() {
+        btnAtacar.addActionListener(e -> controller.showAttackOptions());
+        btnCambiar.addActionListener(e -> controller.showSwitchPokemonDialog());
+        btnItem.addActionListener(e -> controller.showItemSelectionDialog());
+        btnHuir.addActionListener(e -> controller.handleSurrender());
     }
 
-    private void showAttackOptions() {
-        Pokemon active = battle.getCurrentPlayer().getActivePokemon();
-        List<Move> moves = active.getMoves();
+    /**
+     * Actualiza toda la información visual de la batalla.
+     * @param state Estado actual de la batalla que contiene:
+     *              - Información de los Pokémon
+     *              - Turno actual
+     *              - Nombres de jugadores
+     */
+    public void updateBattleInfo(BattleState state) {
+        pokemonInfo1.updatePokemonInfo(state.getPlayer1Pokemon());
+        pokemonInfo2.updatePokemonInfo(state.getPlayer2Pokemon());
 
+        pokemonInfo1.setTurnActive(state.isPlayer1Turn());
+        pokemonInfo2.setTurnActive(!state.isPlayer1Turn());
+
+        spriteManager.loadPokemonSprite(pok1Label,
+                state.getPlayer1Pokemon().getName().toLowerCase(), true);
+        spriteManager.loadPokemonSprite(pok2Label,
+                state.getPlayer2Pokemon().getName().toLowerCase(), false);
+
+        updateTurnInfo(state);
+        updateButtonStates(state);
+    }
+
+    /**
+     * Actualiza la información del turno actual con:
+     * - Nombre del jugador activo (color diferenciado)
+     * - HP actual/máximo de ambos Pokémon
+     * - Clima actual si existe
+     * @param state Estado de la batalla con la información a mostrar
+     */
+    private void updateTurnInfo(BattleState state) {
+        String turnInfo = "Turno de " + state.getCurrentPlayerName();
+        Color turnColor = state.isPlayer1Turn() ?
+                new Color(50, 150, 250) : new Color(250, 50, 50);
+
+        String statusText = "<html><div style='text-align:center;color:black;'>" +
+                "<b><font color='" + String.format("#%02x%02x%02x",
+                turnColor.getRed(), turnColor.getGreen(), turnColor.getBlue()) + "'>" +
+                turnInfo + "</font></b><br>" +
+                state.getPlayer1Name() + ": " +
+                "<b>" + state.getPlayer1Pokemon().getName() + "</b> (" +
+                state.getPlayer1Pokemon().getHp() + "/" +
+                state.getPlayer1Pokemon().getMaxHp() + " HP)<br>" +
+                state.getPlayer2Name() + ": " +
+                "<b>" + state.getPlayer2Pokemon().getName() + "</b> (" +
+                state.getPlayer2Pokemon().getHp() + "/" +
+                state.getPlayer2Pokemon().getMaxHp() + " HP)";
+
+        if (state.getClimate() != null) {
+            statusText += "<br>Clima: <i>" + state.getClimate() + "</i>";
+        }
+
+        statusText += "</div></html>";
+        infoLabel.setText(statusText);
+        infoLabel.setFont(pokemonFont);
+    }
+
+    /**
+     * Actualiza el estado de los botones según:
+     * - Si es turno del jugador humano
+     * - Si el juego está pausado
+     * @param state Estado actual de la batalla
+     */
+    private void updateButtonStates(BattleState state) {
+        boolean isHumanTurn = state.isHumanTurn();
+        btnAtacar.setEnabled(isHumanTurn && !isPaused());
+        btnCambiar.setEnabled(isHumanTurn && !isPaused());
+        btnItem.setEnabled(isHumanTurn && !isPaused());
+        btnHuir.setEnabled(isHumanTurn && !isPaused());
+    }
+
+    /**
+     * Muestra las opciones de ataque disponibles:
+     * - Crea botones para cada movimiento
+     * - Deshabilita movimientos sin PP
+     * - Añade botón de cancelar
+     * @param moves Lista de movimientos disponibles
+     */
+    public void showAttackOptions(List<Move> moves) {
         JPanel attackPanel = (JPanel) panelOpciones.getComponent(1);
         attackPanel.removeAll();
 
-        for (Move move : moves) {
-            JButton moveButton = new JButton(move.name() + " (PP: " + move.pp() + "/" + move.maxPP() + ")");
-            moveButton.setBackground(Color.ORANGE);
-            moveButton.addActionListener(e -> {
-                int moveIndex = moves.indexOf(move);
-                controller.getCurrentBattle().performAction(Action.createAttack(moveIndex));
-                updateBattleInfo();
+        int rows = Math.min(5, moves.size() + 1);
+        attackPanel.setLayout(new GridLayout(rows, 1, 5, 5));
 
-                if (!battle.isFinished()) {
-                    cardLayout.show(panelOpciones, "main");
-                    endPlayerTurn();
-                } else {
-                    checkBattleEnd();
-                }
-            });
+        for (int i = 0; i < moves.size(); i++) {
+            Move move = moves.get(i);
+            JButton moveButton = createBattleButton(
+                    move.name() + " (PP: " + move.pp() + "/" + move.maxPP() + ")",
+                    new Color(200, 120, 200));
+
+            final int moveIndex = i;
+            moveButton.addActionListener(e -> controller.executeAttack(moveIndex));
 
             if (move.pp() <= 0) {
                 moveButton.setEnabled(false);
@@ -531,8 +488,7 @@ public class BattleGUI extends JFrame {
             attackPanel.add(moveButton);
         }
 
-        JButton cancelButton = new JButton("Cancelar");
-        cancelButton.setBackground(Color.LIGHT_GRAY);
+        JButton cancelButton = createBattleButton("CANCELAR", new Color(160, 160, 160));
         cancelButton.addActionListener(e -> cardLayout.show(panelOpciones, "main"));
         attackPanel.add(cancelButton);
 
@@ -541,176 +497,292 @@ public class BattleGUI extends JFrame {
         attackPanel.repaint();
     }
 
-    private void checkBattleEnd() {
-        if (battle.isFinished()) {
-            Trainer winner = battle.getWinner();
-            String message = winner != null ?
-                    "¡" + winner.getName() + " ha ganado la batalla!" :
-                    "¡La batalla ha terminado en empate!";
-
-            JOptionPane.showMessageDialog(this, message);
-            System.exit(0);
-        }
+    /**
+     * Actualiza el temporizador de turno.
+     * @param secondsLeft Segundos restantes para el turno actual
+     */
+    public void updateTurnTimer(int secondsLeft) {
+        turnTimerLabel.setText("Tiempo restante: " + secondsLeft + "s");
     }
 
-    private void endPlayerTurn() {
-        if (battle.isFinished()) {
-            checkBattleEnd();
-            return;
-        }
-
-
-        battle.changeTurn();
-        updateBattleInfo();
-
-
-        if (!battle.isFinished() && battle.getCurrentPlayer().isCPU()) {
-            executeCpuTurn();
-        }
+    /**
+     * Delega el guardado de partida al PersistenceManager.
+     * @see GamePersistenceManager#saveGame(GameController, int)
+     */
+    private void saveGame() {
+        persistenceManager.saveGame(controller, gameMode);
     }
 
-    private void executeAutoBattleTurn() {
-        Timer timer = new Timer(1500, e -> {
-            if (!battle.isFinished()) {
-                controller.getCurrentBattle().executeCpuTurn();
-                updateBattleInfo();
-
-                if (battle.getCurrentPlayer().isCPU()) {
-                    executeAutoBattleTurn();
-                }
-            } else {
-                checkBattleEnd();
-            }
-        });
-        timer.setRepeats(false);
-        timer.start();
-    }
-
-    private void showPlayerSetup(int gameMode) {
-        JPanel setupPanel = new JPanel(new GridLayout(0, 1, 10, 10));
-        setupPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JTextField player1Field = new JTextField(20);
-        JTextField player2Field = new JTextField(20);
-
-        if (gameMode != 3) {
-            setupPanel.add(new JLabel("Nombre del Jugador 1:"));
-            setupPanel.add(player1Field);
-        }
-
-        if (gameMode == 1) {
-            setupPanel.add(new JLabel("Nombre del Jugador 2:"));
-            setupPanel.add(player2Field);
-        }
-
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                setupPanel,
-                "Configuración de jugadores",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION) {
-            String player1Name = gameMode == 3 ? "CPU Ash" :
-                    (player1Field.getText().trim().isEmpty() ? "Jugador 1" : player1Field.getText());
-            String player2Name = gameMode == 3 ? "CPU Gary" :
-                    (player2Field.getText().trim().isEmpty() ? "Jugador 2" : player2Field.getText());
-
-            this.controller = new GameController();
-            this.controller.setGUI(this);
-            this.controller.startGame(gameMode, player1Name, player2Name);
-        }
-    }
-
-    private void executeCpuTurn() {
-        Timer timer = new Timer(1000, e -> {
-            controller.getCurrentBattle().executeCpuTurn();
-            updateBattleInfo();
-
-            if (!battle.isFinished()) {
-
-                battle.changeTurn();
-                updateBattleInfo();
-            } else {
-                checkBattleEnd();
-            }
-        });
-        timer.setRepeats(false);
-        timer.start();
-    }
-
-    private void showSwitchPokemonDialog(Trainer trainer) {
-        String[] options = new String[trainer.getTeam().getPokemons().size() + 1];
-
-
-        for (int i = 0; i < trainer.getTeam().getPokemons().size(); i++) {
-            Pokemon p = trainer.getTeam().getPokemons().get(i);
-            String status = (p.getHp() <= 0) ? " - Debilitado" : "";
-            options[i] = p.getName() + " (HP: " + p.getHp() + "/" + p.getMaxHp() + ")" + status;
-        }
-
-
-        boolean hasRevive = trainer.getItems().stream()
-                .anyMatch(item -> item instanceof Revive);
-
-        if (hasRevive) {
-            options[options.length - 1] = "Usar Revive";
-        }
-
-        String selected = (String) JOptionPane.showInputDialog(
-                this,
-                "¡Tu Pokémon se ha debilitado! Elige acción:",
-                "Cambiar Pokémon/Usar Revive",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                options,
-                options[0]);
-
-        if (selected != null) {
-            if (selected.equals("Usar Revive")) {
-                Optional<Item> revive = trainer.getItems().stream()
-                        .filter(item -> item instanceof Revive)
-                        .findFirst();
-
-                if (revive.isPresent()) {
-                    revive.get().use(trainer.getActivePokemon());
-                    trainer.getItems().remove(revive.get());
-                    updateBattleInfo();
-                }
-            } else {
-                int pokemonIndex = Arrays.asList(options).indexOf(selected);
-                battle.performAction(Action.createSwitchPokemon(pokemonIndex));
-                updateBattleInfo();
-            }
-        }
-    }
-    private void handleFaintedPokemon(Trainer trainer) {
-        if (trainer.getTeam().isAllFainted()) {
-            Optional<Item> revive = trainer.getItems().stream()
-                    .filter(item -> item instanceof Revive)
-                    .findFirst();
-
-            if (revive.isPresent()) {
-                revive.get().use(trainer.getActivePokemon());
-                trainer.getItems().remove(revive.get());
-                JOptionPane.showMessageDialog(this,
-                        "¡Se usó un Revive automáticamente en " +
-                                trainer.getActivePokemon().getName() + "!");
-                updateBattleInfo();
-            } else {
-                checkBattleEnd();
-            }
-        } else {
-            showSwitchPokemonDialog(trainer);
+    /**
+     * Delega la carga de partida al PersistenceManager.
+     * @see GamePersistenceManager#loadGame()
+     */
+    private void loadGame() {
+        GameState gameState = persistenceManager.loadGame();
+        if (gameState != null) {
+            controller.loadGameState(gameState);
+            this.gameMode = gameState.getGameMode();
+            setupBattleWindow();
+            updateBattleInfo(gameState.getBattle().getBattleState());
         }
     }
 
     /**
-     * The main method to launch the application.
-     *
-     * @param args command line arguments (not used)
+     * Alterna el estado de pausa del juego.
+     * @see PauseManager#togglePause()
+     */
+    private void togglePause() {
+        pauseManager.togglePause();
+    }
+
+    /**
+     * Verifica si el juego está pausado.
+     * @return true si el juego está pausado, false en caso contrario
+     * @see PauseManager#isPaused()
+     */
+    public boolean isPaused() {
+        return pauseManager.isPaused();
+    }
+
+    /**
+     * Establece el controlador del juego.
+     * @param controller Controlador principal del juego
+     */
+    public void setController(GameController controller) {
+        this.controller = controller;
+    }
+
+    /**
+     * Establece el modo de juego actual.
+     * @param mode Modo de juego (1=PvP, 2=PvM, 3=MvM)
+     */
+    public void setGameMode(int mode) {
+        this.gameMode = mode;
+    }
+
+    /**
+     * Muestra el mensaje de fin de batalla y termina la aplicación.
+     * @param message Mensaje con el resultado de la batalla
+     */
+    public void showBattleEnd(String message) {
+        JOptionPane.showMessageDialog(this, message);
+        System.exit(0);
+    }
+
+    /**
+     * Verifica si el panel de ataques está visible.
+     * @return true si hay ataques mostrados, false en caso contrario
+     */
+    public boolean isAttackPanelVisible() {
+        return ((JPanel)panelOpciones.getComponent(1)).getComponentCount() > 0;
+    }
+
+    /**
+     * Muestra las opciones principales de batalla.
+     */
+    public void showMainOptions() {
+        cardLayout.show(panelOpciones, "main");
+    }
+
+    /**
+     * Obtiene el panel de registro de batalla.
+     * @return Instancia de BattleLogPanel
+     */
+    public BattleLogPanel getBattleLogPanel() {
+        return logPanel;
+    }
+
+    /**
+     * Registra un ataque en el log de batalla.
+     * @param attackerName Nombre del atacante
+     * @param targetName Nombre del objetivo
+     * @param moveName Nombre del movimiento usado
+     */
+    @Override
+    public void onAttackPerformed(String attackerName, String targetName, String moveName) {
+        logPanel.addMessage(attackerName + " atacó a " + targetName + " con " + moveName + "!");
+    }
+
+    /**
+     * Registra uso de ítem en el log de batalla.
+     * @param playerName Nombre del jugador
+     * @param itemName Nombre del ítem usado
+     * @param targetName Nombre del objetivo
+     */
+    @Override
+    public void onItemUsed(String playerName, String itemName, String targetName) {
+        logPanel.addMessage(playerName + " usó " + itemName + " en " + targetName + "!");
+    }
+
+    /**
+     * Registra cambio de Pokémon en el log de batalla.
+     * @param playerName Nombre del jugador
+     * @param pokemonName Nombre del Pokémon enviado
+     */
+    @Override
+    public void onPokemonSwitched(String playerName, String pokemonName) {
+        logPanel.addMessage(playerName + " envió a " + pokemonName + "!");
+    }
+
+    /**
+     * Registra daño recibido en el log de batalla.
+     * @param pokemonName Nombre del Pokémon afectado
+     * @param damage Cantidad de daño recibido
+     */
+    @Override
+    public void onDamageReceived(String pokemonName, int damage) {
+        logPanel.addMessage(pokemonName + " perdió " + damage + " PS!");
+    }
+
+    /**
+     * Registra Pokémon debilitado en el log de batalla.
+     * @param pokemonName Nombre del Pokémon debilitado
+     */
+    @Override
+    public void onPokemonFainted(String pokemonName) {
+        logPanel.addMessage(pokemonName + " se debilitó!");
+    }
+
+    /**
+     * Panel interno para el fondo de batalla con imagen escalable.
+     */
+    private class BackgroundPanel extends JPanel {
+        private java.awt.image.BufferedImage backgroundImage;
+
+        /**
+         * Crea el panel de fondo con layout absoluto.
+         */
+        public BackgroundPanel() {
+            setLayout(null);
+            loadBackgroundImage();
+        }
+
+        /**
+         * Carga la imagen de fondo usando SpriteManager.
+         */
+        private void loadBackgroundImage() {
+            backgroundImage = spriteManager.loadBackgroundImage("battleBackground.png");
+        }
+
+        /**
+         * Dibuja el fondo escalado o color sólido si no hay imagen.
+         * @param g Contexto gráfico para dibujar
+         */
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (backgroundImage != null) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                g2d.dispose();
+            } else {
+                g.setColor(new Color(120, 184, 232));
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        }
+    }
+
+    /**
+     * Reposiciona los elementos de batalla al redimensionar la ventana,
+     * manteniendo las proporciones originales.
+     */
+    private void repositionBattleElements() {
+        if (battlePanel == null) return;
+
+        int battleWidth = battlePanel.getWidth();
+        int battleHeight = battlePanel.getHeight();
+
+        if (battleWidth <= 0 || battleHeight <= 0) return;
+
+        double scaleX = (double) battleWidth / ORIGINAL_WIDTH;
+        double scaleY = (double) battleHeight / ORIGINAL_HEIGHT;
+
+        if (pokemonInfo1 != null) {
+            int x1 = (int) (20 * scaleX);
+            int y1 = (int) (20 * scaleY);
+            int w1 = (int) (250 * scaleX);
+            int h1 = (int) (80 * scaleY);
+            pokemonInfo1.setBounds(x1, y1, w1, h1);
+        }
+
+        if (pokemonInfo2 != null) {
+            int x2 = (int) ((ORIGINAL_WIDTH - 270) * scaleX);
+            int y2 = (int) (20 * scaleY);
+            int w2 = (int) (250 * scaleX);
+            int h2 = (int) (80 * scaleY);
+            pokemonInfo2.setBounds(x2, y2, w2, h2);
+        }
+
+        if (pok1Label != null) {
+            int x1 = (int) (80 * scaleX);
+            int y1 = (int) (220 * scaleY);
+            int w1 = (int) (200 * scaleX);
+            int h1 = (int) (200 * scaleY);
+            pok1Label.setBounds(x1, y1, w1, h1);
+        }
+
+        if (pok2Label != null) {
+            int x2 = (int) ((ORIGINAL_WIDTH - 300) * scaleX);
+            int y2 = (int) (90 * scaleY);
+            int w2 = (int) (200 * scaleX);
+            int h2 = (int) (200 * scaleY);
+            pok2Label.setBounds(x2, y2, w2, h2);
+        }
+
+        battlePanel.revalidate();
+        battlePanel.repaint();
+    }
+
+    /**
+     * Muestra la pantalla inicial de selección de modo de juego.
+     */
+    public void showInitialScreen() {
+        setVisible(false);
+        ModeSelectionGUI selector = new ModeSelectionGUI(this);
+        selector.setVisible(true);
+    }
+
+    /**
+     * Muestra la selección de modo de juego.
+     */
+    public void showGameModeSelection() {
+        setVisible(true);
+    }
+
+    /**
+     * Inicia el juego en modo supervivencia:
+     * - Solicita nombres de jugadores
+     * - Configura la ventana de batalla
+     * - Inicia el controlador en modo supervivencia
+     */
+    public void startSurvivalGame() {
+        setVisible(false);
+
+        String player1 = JOptionPane.showInputDialog(this, "Nombre del Jugador 1:");
+        if (player1 == null || player1.trim().isEmpty()) {
+            player1 = "Jugador 1";
+        }
+
+        String player2 = JOptionPane.showInputDialog(this, "Nombre del Jugador 2:");
+        if (player2 == null || player2.trim().isEmpty()) {
+            player2 = "Jugador 2";
+        }
+
+        setupBattleWindow();
+        setVisible(true);
+        controller.startSurvivalMode(player1, player2);
+    }
+
+    /**
+     * Punto de entrada principal de la aplicación.
+     * @param args Argumentos de línea de comandos (no utilizados)
      */
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(BattleGUI::new);
+        SwingUtilities.invokeLater(() -> {
+            BattleGUI gui = new BattleGUI();
+            gui.showInitialScreen();
+        });
     }
 }

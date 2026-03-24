@@ -1,78 +1,128 @@
 package domain;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Representa un efecto aplicado por un movimiento.
+ * Representa un efecto aplicado por un movimiento en batalla.
+ * Puede modificar estadísticas, aplicar estados, forzar cambios, entre otros.
  */
-public class Effect {
-    private final String type; // statChange, status, climate, restriction, etc.
-    private final String target; // self, opponent, field
-    private final Map<String, Integer> statChanges; // Ej: {"attack": 1, "defense": -2}
-    private final String status; // Ej: toxic, taunt, encore, etc.
-    private final int duration; // en turnos, si aplica
+public class Effect implements Serializable {
 
-    public Effect(String type, String target, Map<String, Integer> statChanges, String status, int duration) {
-        this.type = type.toLowerCase();
-        this.target = target.toLowerCase();
+    private EffectType effectType;
+    private Map<String, Integer> statChanges;
+    private String status;
+    private int duration;
+    private boolean stackable;
+    private boolean forceSwitch;
+    private Target target;
+
+    /**
+     * Construye un nuevo efecto con los parámetros especificados.
+     *
+     * @param effectType   tipo de efecto (BUFF, DEBUFF, STATUS, etc.)
+     * @param target       objetivo del efecto (usuario o enemigo)
+     * @param statChanges  mapa de cambios estadísticos (ej. "ataque", +1)
+     * @param status       estado a aplicar (parálisis, toxic, etc.)
+     * @param duration     duración del efecto en turnos
+     * @param stackable    indica si el efecto puede acumularse
+     * @param forceSwitch  indica si debe forzarse un cambio de Pokémon
+     */
+    public Effect(EffectType effectType, Target target, Map<String, Integer> statChanges, String status, int duration,
+                  boolean stackable, boolean forceSwitch) {
+        this.effectType = effectType;
         this.statChanges = statChanges;
+        this.target = target;
         this.status = status;
         this.duration = duration;
+        this.stackable = stackable;
+        this.forceSwitch = forceSwitch;
     }
 
-    public void apply(Pokemon user, Pokemon opponent) {
-        Pokemon targetPokemon = switch (target) {
-            case "self" -> user;
-            case "opponent" -> opponent;
-            default -> null;
-        };
+    /**
+     * Aplica el efecto al Pokémon objetivo o al usuario, dependiendo del tipo de objetivo.
+     *
+     * @param user   el Pokémon que ejecuta el movimiento
+     * @param target el Pokémon objetivo
+     */
+    public void apply(Pokemon user, Pokemon target) {
+        Pokemon affected = (this.target == Target.USER) ? user : target;
 
-        if (targetPokemon == null) return;
+        if ((effectType == EffectType.BUFF || effectType == EffectType.DEBUFF) && statChanges != null) {
+            for (Map.Entry<String, Integer> entry : statChanges.entrySet()) {
+                affected.modifyStat(entry.getKey(), entry.getValue());
+            }
+        }
 
-        switch (type) {
-            case "statchange" -> {
-                if (statChanges != null) {
-                    for (Map.Entry<String, Integer> entry : statChanges.entrySet()) {
-                        targetPokemon.modifyStat(entry.getKey(), entry.getValue());
-                    }
-                }
-            }
-            case "status" -> {
-                if (status != null) {
-                    targetPokemon.setStatus(status);
-                }
-            }
-            case "climate" -> {
-                if (status != null) {
-                    Battle.setClimate(status, duration);
-                }
-            }
-            case "clearboosts" -> targetPokemon.resetBoosts();
-            case "substitute" -> targetPokemon.createSubstitute();
-            case "restriction" -> targetPokemon.applyRestriction(status, duration);
-            default -> {
-            }
+        if (effectType == EffectType.STATUS && status != null) {
+            affected.setStatus(status);
+        }
+
+        if (effectType == EffectType.FORCE_SWITCH && forceSwitch) {
+            affected.setForcedToSwitch(true);
+        }
+
+        if (effectType == EffectType.RESET_STATS) {
+            user.resetBoosts();
+            target.resetBoosts();
+        }
+
+        if (effectType == EffectType.RESTRICTION && status != null) {
+            affected.applyRestriction(status, duration);
+        }
+
+
+        if (duration > 0 && (effectType == EffectType.STATUS || effectType == EffectType.RESTRICTION)) {
+            affected.addEffect(this);
+        }
+
+        if ("toxic".equalsIgnoreCase(status) && effectType == EffectType.STATUS) {
+            affected.addEffect(this);
         }
     }
 
-
-    public String getType() {
-        return type;
+    /**
+     * Obtiene la duración del efecto en turnos.
+     *
+     * @return duración del efecto
+     */
+    public int getDuration() {
+        return duration;
     }
 
-    public String getTarget() {
-        return target;
-    }
-
-    public Map<String, Integer> getStatChanges() {
-        return statChanges;
-    }
-
+    /**
+     * Obtiene el estado asociado al efecto (si aplica).
+     *
+     * @return el estado como cadena (ej. "parálisis", "toxic")
+     */
     public String getStatus() {
         return status;
     }
 
-    public int getDuration() {
-        return duration;
+    /**
+     * Obtiene el mapa de cambios estadísticos aplicados por el efecto.
+     *
+     * @return mapa con estadísticas y sus modificaciones
+     */
+    public Map<String, Integer> getStatChanges() {
+        return statChanges;
+    }
+
+    /**
+     * Indica si el efecto es acumulable.
+     *
+     * @return true si puede acumularse, false si no
+     */
+    public boolean isStackable() {
+        return stackable;
+    }
+
+    /**
+     * Retorna el tipo del efecto.
+     *
+     * @return tipo de efecto (BUFF, STATUS, etc.)
+     */
+    public EffectType getEffectType() {
+        return effectType;
     }
 }
